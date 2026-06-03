@@ -1,10 +1,10 @@
 QUESTIONS = [
     {
         "letter": "A",
-        "animal": "Antelope",
-        "image": "assets/images/animals/ANTELLOPE.png", # Fixed to All-Caps & double 'L'
-        "sound": "assets/sounds/animals/antellop.mp3", # Fixed to your local spelling
-        "hint": "Aaa... Antelope starts with A!"
+        "animal": "Ant",
+        "image": "assets/images/animals/ANT.png", # Fixed to All-Caps & double 'L'
+        "sound": "assets/sounds/animals/ant.mp3", # Fixed to your local spelling
+        "hint": "Aaa... Ant starts with A!"
     },
     {
         "letter": "B",
@@ -43,24 +43,24 @@ QUESTIONS = [
     },
     {
         "letter": "G",
-        "animal": "Goat",
-        "image": "assets/images/animals/goat.png",
-        "sound": "assets/sounds/animals/goat.mp3",
-        "hint": "Ggg... Goat starts with G!"
+        "animal": "Girraffe",
+        "image": "assets/images/animals/girraffe.png",
+        "sound": "assets/sounds/animals/girraffe.mp3",
+        "hint": "Ggg... Girraffe starts with G!"
     },
     {
         "letter": "H",
-        "animal": "Horse",
-        "image": "assets/images/animals/HORSE.png", # Fixed to Caps
-        "sound": "assets/sounds/animals/horse.mp3",
-        "hint": "Hhh... Horse starts with H!"
+        "animal": "Hippo",
+        "image": "assets/images/animals/HIPPO.png", # Fixed to Caps
+        "sound": "assets/sounds/animals/hippo.mp3",
+        "hint": "Hhh... Hippo starts with H!"
     },
     {
         "letter": "I",
-        "animal": "Ibis",
-        "image": "assets/images/animals/ibis.png",
-        "sound": "assets/sounds/animals/ibis.mp3",
-        "hint": "Iii... Ibis starts with I!"
+        "animal": "Iguana",
+        "image": "assets/images/animals/igana.png",
+        "sound": "assets/sounds/animals/igana.mp3",
+        "hint": "Iii... Iguana starts with I!"
     },
     {
         "letter": "J",
