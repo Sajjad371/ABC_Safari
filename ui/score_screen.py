@@ -1,496 +1,161 @@
 # -*- coding: utf-8 -*-
 """
-ABC Safari - Score Screen
+ABC Safari - Score Screen Hub
 File: ui/score_screen.py
-Beautiful end-game celebration screen with:
-- Fireworks canvas animation
-- Monkey happy animation
-- Stars display
-- Weak letters feedback
-- Play Again / Quit buttons
 """
 
 import customtkinter as ctk
 from PIL import Image, ImageTk
 import os, math, random
 
-BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-IMG_DIR   = os.path.join(BASE_DIR, "assets", "images")
-ANIMAL_DIR= os.path.join(IMG_DIR, "animals")
-ROBO_DIR  = os.path.join(ANIMAL_DIR, "robo")
-UI_DIR    = os.path.join(ANIMAL_DIR, "ui")
-FONT_DIR  = os.path.join(BASE_DIR, "assets", "fonts")
+BASE_DIR   = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMG_DIR    = os.path.join(BASE_DIR, "assets", "images")
+ANIMAL_DIR = os.path.join(IMG_DIR, "animals")
+UI_DIR     = os.path.join(ANIMAL_DIR, "ui")
+FONT_DIR   = os.path.join(BASE_DIR, "assets", "fonts")
 
 SCREEN_W, SCREEN_H = 1280, 720
-
 
 def _font(size, weight="normal"):
     try:
         fname = "Nunito-Bold.ttf" if weight=="bold" else "Nunito-Regular.ttf"
         if os.path.exists(os.path.join(FONT_DIR, fname)):
             return ctk.CTkFont(family="Nunito", size=size, weight=weight)
-    except Exception:
-        pass
+    except Exception: pass
     return ctk.CTkFont(size=size, weight=weight)
 
-
-def _load_pil(filename, dirs):
-    for d in dirs:
-        p = os.path.join(d, filename)
-        if os.path.exists(p):
-            try:
-                return Image.open(p).convert("RGBA")
-            except Exception:
-                pass
-    return None
-
-
-def _load_monkey(size=(260, 330)):
-    for fname in ["monkey_happy.png", "monkey_hello.png",
-                  "robo_happy.png", "robo_idle.png"]:
-        img = _load_pil(fname, [ROBO_DIR])
-        if img:
-            return ctk.CTkImage(light_image=img,
-                                dark_image=img, size=size)
-    return None
-
-
-# ─────────────────────────────────────────────
-#  FIREWORKS ENGINE
-# ─────────────────────────────────────────────
-
-class FireworksEngine:
-    """Continuous fireworks bursting on a Tkinter canvas."""
-
-    COLORS = [
-        "#FFD700","#FF6B9D","#4FC3F7","#A5D6A7",
-        "#FF8F00","#E040FB","#F44336","#00BCD4",
-        "#FFEB3B","#69F0AE","#FF4081","#40C4FF",
-    ]
-
-    def __init__(self, canvas):
-        self.canvas    = canvas
-        self.rockets   = []
-        self.particles = []
-        self._launch_next()
-        self._tick()
-
-    def _launch_next(self):
-        """Launch a new rocket after random delay."""
-        x = random.randint(150, SCREEN_W - 150)
-        self.rockets.append({
-            "x": x,
-            "y": float(SCREEN_H),
-            "vy": -random.uniform(14, 22),
-            "target_y": random.randint(80, 320),
-            "color": random.choice(self.COLORS),
-        })
-        self.canvas.after(random.randint(400, 900),
-                          self._launch_next)
-
-    def _burst(self, x, y, color):
-        """Explode a rocket into particles."""
-        count = random.randint(35, 60)
-        for _ in range(count):
-            angle = random.uniform(0, 2 * math.pi)
-            speed = random.uniform(2, 9)
-            self.particles.append({
-                "x": float(x), "y": float(y),
-                "vx": speed * math.cos(angle),
-                "vy": speed * math.sin(angle),
-                "life": random.randint(28, 50),
-                "max_life": 50,
-                "color": color,
-                "size": random.randint(4, 10),
-            })
-
-    def _tick(self):
-        self.canvas.delete("fw")
-
-        # Move rockets
-        alive_rockets = []
-        for r in self.rockets:
-            r["y"] += r["vy"]
-            s = r["size"] if "size" in r else 5
-            self.canvas.create_oval(
-                r["x"]-3, r["y"]-3,
-                r["x"]+3, r["y"]+3,
-                fill=r["color"], outline="", tags="fw"
-            )
-            # Trail
-            self.canvas.create_line(
-                r["x"], r["y"],
-                r["x"], r["y"] - 18,
-                fill=r["color"], width=2, tags="fw"
-            )
-            if r["y"] <= r["target_y"]:
-                self._burst(r["x"], r["y"], r["color"])
-            else:
-                alive_rockets.append(r)
-        self.rockets = alive_rockets
-
-        # Move particles
-        alive_p = []
-        for p in self.particles:
-            p["x"]  += p["vx"]
-            p["y"]  += p["vy"]
-            p["vy"] += 0.28   # gravity
-            p["vx"] *= 0.97   # air resistance
-            p["life"] -= 1
-            if p["life"] > 0:
-                alpha_ratio = p["life"] / p["max_life"]
-                s = max(1, int(p["size"] * alpha_ratio))
-                self.canvas.create_oval(
-                    p["x"]-s, p["y"]-s,
-                    p["x"]+s, p["y"]+s,
-                    fill=p["color"], outline="", tags="fw"
-                )
-                # Star shape for variety
-                if p["size"] > 6:
-                    self.canvas.create_text(
-                        p["x"], p["y"],
-                        text="✦", font=("Arial", s+2),
-                        fill=p["color"], tags="fw"
-                    )
-                alive_p.append(p)
-        self.particles = alive_p
-
-        self.canvas.after(28, self._tick)
-
-
-# ─────────────────────────────────────────────
-#  FLOATING MONKEY
-# ─────────────────────────────────────────────
-
-class FloatingMonkey:
-    """Makes the monkey label bounce up and down."""
-
-    def __init__(self, parent, label, base_rely=0.48):
-        self.parent     = parent
-        self.label      = label
-        self.base_rely  = base_rely
-        self.step       = 0
-        self._go()
-
-    def _go(self):
-        try:
-            oy = 0.018 * math.sin(self.step / 38)
-            self.label.place(relx=0.80,
-                             rely=self.base_rely + oy,
-                             anchor="center")
-            self.step += 1
-            self.parent.after(35, self._go)
-        except Exception:
-            pass
-
-
-# ─────────────────────────────────────────────
-#  CONFETTI SHOWER
-# ─────────────────────────────────────────────
-
-class ConfettiShower:
-    COLORS = ["#FFD700","#FF6B9D","#4FC3F7","#A5D6A7",
-              "#FF8F00","#E040FB","#F44336","#00BCD4"]
-
-    def __init__(self, canvas):
-        self.canvas = canvas
-        self.flakes = [self._new_flake() for _ in range(60)]
-        self._tick()
-
-    def _new_flake(self):
-        return {
-            "x": random.randint(0, SCREEN_W),
-            "y": random.randint(-50, -5),
-            "vy": random.uniform(2, 5),
-            "vx": random.uniform(-1.5, 1.5),
-            "size": random.randint(5, 12),
-            "color": random.choice(self.COLORS),
-            "shape": random.choice(["oval","text"]),
-        }
-
-    def _tick(self):
-        self.canvas.delete("confetti")
-        for f in self.flakes:
-            f["x"] += f["vx"]
-            f["y"] += f["vy"]
-            if f["y"] > SCREEN_H + 20:
-                f.update(self._new_flake())
-            s = f["size"]
-            if f["shape"] == "oval":
-                self.canvas.create_oval(
-                    f["x"]-s, f["y"]-s,
-                    f["x"]+s, f["y"]+s,
-                    fill=f["color"], outline="", tags="confetti"
-                )
-            else:
-                self.canvas.create_text(
-                    f["x"], f["y"],
-                    text=random.choice(["⭐","🌟","✨","💫"]),
-                    font=("Arial", s+4), tags="confetti"
-                )
-        self.canvas.after(30, self._tick)
-
-
-# ─────────────────────────────────────────────
-#  PULSING BORDER
-# ─────────────────────────────────────────────
-
-class PulsingBorder:
-    COLS = ["#FFD700","#FF8F00","#FF6B9D","#4FC3F7","#FFD700"]
-
-    def __init__(self, parent, frame):
+class ScoreCanvas:
+    """Instruction 9: Overhauled canvas that layers particles directly onto your custom background scene image."""
+    def __init__(self, parent):
         self.parent = parent
-        self.frame  = frame
-        self.i      = 0
-        self._go()
+        self.canvas = ctk.CTkCanvas(parent, bg="#0A1A10", highlightthickness=0, width=SCREEN_W, height=SCREEN_H)
+        self.canvas.place(x=0, y=0)
+        
+        self.bg_photo = None
+        p_bg = os.path.join(UI_DIR, "jungle_background.jpg")
+        if os.path.exists(p_bg):
+            img = Image.open(p_bg).convert("RGBA").resize((SCREEN_W, SCREEN_H), Image.LANCZOS)
+            overlay = Image.new("RGBA", img.size, (0, 0, 0, 120)) # Dark mask layer for visual structure contrast
+            self.bg_photo = ImageTk.PhotoImage(Image.alpha_composite(img, overlay))
+            self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw")
+            
+        self.particles = []
+        self._spawn_loop()
+        self._animate()
 
-    def _go(self):
+    def _spawn_loop(self):
+        colors = ["#FFD700","#FF6B9D","#4FC3F7","#A5D6A7","#E040FB"]
+        for _ in range(12):
+            self.particles.append({
+                "x": random.randint(100, SCREEN_W-100), "y": float(SCREEN_H),
+                "vy": -random.uniform(12, 19), "target_y": random.randint(60, 280),
+                "color": random.choice(colors), "state": "rocket", "pts": []
+            })
+        self.parent.after(800, self._spawn_loop)
+
+    def _animate(self):
+        self.canvas.delete("fw")
+        still_alive = []
+        for p in self.particles:
+            if p["state"] == "rocket":
+                p["y"] += p["vy"]
+                self.canvas.create_oval(p["x"]-3, p["y"]-3, p["x"]+3, p["y"]+3, fill=p["color"], outline="", tags="fw")
+                if p["y"] <= p["target_y"]:
+                    p["state"] = "burst"
+                    for _ in range(30):
+                        ang = random.uniform(0, 2*math.pi)
+                        sp  = random.uniform(1.5, 6)
+                        p["pts"].append({"x": p["x"], "y": p["y"], "vx": sp*math.cos(ang), "vy": sp*math.sin(ang), "life": random.randint(20, 35)})
+                still_alive.append(p)
+            elif p["state"] == "burst":
+                active_pts = []
+                for pt in p["pts"]:
+                    pt["x"] += pt["vx"]; pt["y"] += pt["vy"]; pt["vy"] += 0.22; pt["life"] -= 1
+                    if pt["life"] > 0:
+                        self.canvas.create_oval(pt["x"]-2, pt["y"]-2, pt["x"]+2, pt["y"]+2, fill=p["color"], outline="", tags="fw")
+                        active_pts.append(pt)
+                p["pts"] = active_pts
+                if active_pts: still_alive.append(p)
+        self.particles = still_alive
+        self.parent.after(30, self._animate)
+
+def show_score_screen(root, player_name="Explorer", score=0, stars=0, weak_letters=None, on_play_again=None, on_quit=None):
+    if weak_letters is None: weak_letters = []
+    for w in root.winfo_children(): w.destroy()
+    # Configure root background to match the dark canvas overlay exactly, eliminating green corner fringes on all widgets
+    root.configure(fg_color="#0A1A10")
+
+    engine = ScoreCanvas(root)
+
+    # 3D Double Typography Header System (Jungle themed victory title)
+    title_text = f"Safari Victory, {player_name}!"
+    ctk.CTkLabel(root, text=title_text, font=_font(48, "bold"), text_color="#3E2723").place(relx=0.383, y=20, anchor="n")
+    ctk.CTkLabel(root, text=title_text, font=_font(48, "bold"), text_color="#FFD600").place(relx=0.38, y=17, anchor="n")
+
+    # Correct Answers Badge
+    badge = ctk.CTkFrame(root, fg_color="#3E2723", bg_color="transparent", corner_radius=20, border_color="#FFD600", border_width=3, width=420, height=60)
+    badge.place(relx=0.38, y=80, anchor="n")
+    badge.pack_propagate(False)
+    ctk.CTkLabel(badge, text=f"🐾  {score} Correct Answers!", font=_font(26, "bold"), text_color="#FFFFFF").place(relx=0.5, rely=0.5, anchor="center")
+
+    # Load high-quality local trophy image
+    p_trophy = os.path.join(UI_DIR, "trophy.png")
+    trophy_img = None
+    if os.path.exists(p_trophy):
         try:
-            self.frame.configure(
-                border_color=self.COLS[self.i % len(self.COLS)])
-            self.i += 1
-            self.parent.after(500, self._go)
-        except Exception:
-            pass
+            trophy_pil = Image.open(p_trophy).convert("RGBA")
+            trophy_img = ctk.CTkImage(light_image=trophy_pil, dark_image=trophy_pil, size=(130, 130))
+        except Exception: pass
 
-
-# ─────────────────────────────────────────────
-#  MAIN FUNCTION
-# ─────────────────────────────────────────────
-
-def show_score_screen(
-    root,
-    player_name="Explorer",
-    score=0,
-    stars=0,
-    weak_letters=None,
-    on_play_again=None,
-    on_quit=None,
-):
-    if weak_letters is None:
-        weak_letters = []
-
-    for w in root.winfo_children():
-        w.destroy()
-
-    # ── Dark overlay canvas for fireworks ──
-    canvas = ctk.CTkCanvas(root, bg="#0A1A10",
-                           highlightthickness=0,
-                           width=SCREEN_W, height=SCREEN_H)
-    canvas.place(x=0, y=0)
-
-    # Try to load background
-    _bg_ref = [None]
-    for fname in ["jungle_background.jpg", "welcome_background.jpg"]:
-        img = _load_pil(fname, [UI_DIR])
-        if img:
-            img = img.resize((SCREEN_W, SCREEN_H), Image.LANCZOS)
-            # Darken it for readability
-            overlay = Image.new("RGBA", img.size, (0, 0, 0, 160))
-            img = Image.alpha_composite(img.convert("RGBA"), overlay)
-            photo = ImageTk.PhotoImage(img)
-            _bg_ref[0] = photo
-            canvas.create_image(0, 0, image=photo, anchor="nw")
-            break
-
-    # ── Fireworks + confetti ──
-    fw = FireworksEngine(canvas)
-    cf = ConfettiShower(canvas)
-
-    # ── 3D bubble title ──
-    ctk.CTkLabel(root,
-        text=f"🎉  Amazing, {player_name}!  🎉",
-        font=_font(56, "bold"),
-        text_color="#3E2723",
-        fg_color="transparent"
-    ).place(relx=0.403, y=30, anchor="n")
-
-    ctk.CTkLabel(root,
-        text=f"🎉  Amazing, {player_name}!  🎉",
-        font=_font(56, "bold"),
-        text_color="#FFD600",
-        fg_color="transparent"
-    ).place(relx=0.40, y=26, anchor="n")
-
-    # ── Score badge ──
-    badge = ctk.CTkFrame(root,
-        fg_color="#1B5E20",
-        corner_radius=26,
-        border_color="#FFD600",
-        border_width=5,
-        width=500, height=96)
-    badge.place(relx=0.38, y=108, anchor="n")
-    ctk.CTkLabel(badge,
-        text=f"🏆   {score}   Correct Answers!",
-        font=_font(38, "bold"),
-        text_color="#FFFFFF",
-        fg_color="transparent"
-    ).place(relx=0.5, rely=0.5, anchor="center")
-    PulsingBorder(root, badge)
-
-    # ── Stars row ──
-    star_text = "⭐" * stars + "☆" * (5 - stars)
-    star_lbl = ctk.CTkLabel(root,
-        text=star_text,
-        font=_font(62, "bold"),
-        text_color="#FFD700",
-        fg_color="transparent")
-    star_lbl.place(relx=0.38, y=228, anchor="n")
-
-    # Animate stars pulsing
-    _star_step = [0]
-    def _pulse_stars():
-        try:
-            sz = 62 + int(6 * math.sin(_star_step[0] / 20))
-            star_lbl.configure(font=_font(sz, "bold"))
-            _star_step[0] += 1
-            root.after(40, _pulse_stars)
-        except Exception:
-            pass
-    root.after(200, _pulse_stars)
-
-    # ── Weak letters panel ──
-    if weak_letters:
-        weak_frame = ctk.CTkFrame(root,
-            fg_color="#4A1010",
-            corner_radius=20,
-            border_color="#FF6B9D",
-            border_width=3,
-            width=480, height=70)
-        weak_frame.place(relx=0.38, y=310, anchor="n")
-        weak_str = "  ".join(weak_letters)
-        ctk.CTkLabel(weak_frame,
-            text=f"📝  Practice these:  {weak_str}",
-            font=_font(24, "bold"),
-            text_color="#FFCCBC",
-            fg_color="transparent"
-        ).place(relx=0.5, rely=0.5, anchor="center")
-    else:
-        perfect = ctk.CTkFrame(root,
-            fg_color="#1A3A2A",
-            corner_radius=20,
-            border_color="#A5D6A7",
-            border_width=3,
-            width=420, height=70)
-        perfect.place(relx=0.38, y=310, anchor="n")
-        ctk.CTkLabel(perfect,
-            text="🌟  Perfect! No weak letters!  🌟",
-            font=_font(22, "bold"),
-            text_color="#A5D6A7",
-            fg_color="transparent"
-        ).place(relx=0.5, rely=0.5, anchor="center")
-
-    # ── Motivational message ──
-    if score >= 9:
-        msg = "🦁  SUPERSTAR EXPLORER!  You're a genius!"
-        msg_col = "#FFD700"
-    elif score >= 7:
-        msg = "🌴  Fantastic job!  Keep exploring!"
-        msg_col = "#A5D6A7"
-    elif score >= 5:
-        msg = "🐵  Good work!  Practice makes perfect!"
-        msg_col = "#4FC3F7"
-    else:
-        msg = "🌿  Keep trying!  You'll get better!"
-        msg_col = "#FF8F00"
-
-    ctk.CTkLabel(root,
-        text=msg,
-        font=_font(24, "bold"),
-        text_color=msg_col,
-        fg_color="transparent"
-    ).place(relx=0.38, y=400, anchor="n")
-
-    # ── Buttons ──
-    play_btn = ctk.CTkButton(root,
-        text="▶   Play Again",
-        font=_font(34, "bold"),
-        width=300, height=88,
-        corner_radius=28,
-        fg_color="#43A047",
-        hover_color="#1B5E20",
-        text_color="#FFFFFF",
-        border_color="#FFD600",
-        border_width=4,
-        command=on_play_again if on_play_again else lambda: None)
-    play_btn.place(relx=0.18, y=470, anchor="n")
-
-    quit_btn = ctk.CTkButton(root,
-        text="✕   Quit",
-        font=_font(34, "bold"),
-        width=240, height=88,
-        corner_radius=28,
-        fg_color="#8B0000",
-        hover_color="#5A0000",
-        text_color="#FFFFFF",
-        border_color="#FF6B9D",
-        border_width=3,
-        command=on_quit if on_quit else lambda: None)
-    quit_btn.place(relx=0.50, y=470, anchor="n")
-
-    # ── Monkey happy on right ──
-    monkey_img = _load_monkey(size=(270, 340))
-    monkey_lbl = ctk.CTkLabel(root,
-        image=monkey_img or None,
-        text="🎉" if not monkey_img else "",
-        font=ctk.CTkFont(size=120),
-        fg_color="transparent")
-    monkey_lbl.place(relx=0.80, rely=0.48, anchor="center")
-    FloatingMonkey(root, monkey_lbl, base_rely=0.48)
-
-    # ── Trophy icon next to monkey ──
-    trophy_img = _load_pil("trophy.png", [UI_DIR])
     if trophy_img:
-        trophy_ctk = ctk.CTkImage(
-            light_image=trophy_img,
-            dark_image=trophy_img,
-            size=(90, 90))
-        ctk.CTkLabel(root,
-            image=trophy_ctk, text="",
-            fg_color="transparent"
-        ).place(relx=0.88, rely=0.82, anchor="center")
+        ctk.CTkLabel(root, image=trophy_img, text="", fg_color="transparent").place(relx=0.38, y=160, anchor="n")
 
-    # ── Floating emoji decorations ──
-    _deco_step = [0]
-    deco_items = ["🌟","🎊","🎈","🏆","⭐","🎉","🌈","🦁"]
-
-    def _deco():
+    # Star Rating Row (using high-quality local star images)
+    p_star = os.path.join(UI_DIR, "star.png")
+    star_img = None
+    if os.path.exists(p_star):
         try:
-            canvas.delete("deco")
-            t = _deco_step[0]
-            for i, em in enumerate(deco_items):
-                x = 30 + i * 170 + int(15*math.sin(t/30 + i))
-                y = SCREEN_H - 55 + int(12*math.cos(t/25 + i*0.7))
-                canvas.create_text(x, y, text=em,
-                    font=("Arial", 28), tags="deco")
-            _deco_step[0] += 1
-            root.after(40, _deco)
-        except Exception:
-            pass
-    _deco()
+            star_pil = Image.open(p_star).convert("RGBA")
+            star_img = ctk.CTkImage(light_image=star_pil, dark_image=star_pil, size=(45, 45))
+        except Exception: pass
+
+    stars_frame = ctk.CTkFrame(root, fg_color="transparent", bg_color="transparent")
+    stars_frame.place(relx=0.38, y=300, anchor="n")
+    
+    if star_img and stars > 0:
+        for _ in range(stars):
+            lbl = ctk.CTkLabel(stars_frame, image=star_img, text="", fg_color="transparent")
+            lbl.pack(side="left", padx=4)
+    else:
+        # Fallback text stars
+        star_str = "⭐" * stars + "☆" * (5 - stars)
+        ctk.CTkLabel(stars_frame, text=star_str, font=_font(48, "bold"), text_color="#FFD700", fg_color="transparent").pack()
+
+    # Error Feedback Cards Module
+    if weak_letters:
+        f_weak = ctk.CTkFrame(root, fg_color="#4A1010", bg_color="transparent", corner_radius=16, border_color="#FF6B9D", border_width=2, width=420, height=65)
+        f_weak.place(relx=0.38, y=360, anchor="n")
+        ctk.CTkLabel(f_weak, text=f"📝 Practice these:  " + " ".join(weak_letters), font=_font(22, "bold"), text_color="#FFCCBC").place(relx=0.5, rely=0.5, anchor="center")
+    else:
+        f_perf = ctk.CTkFrame(root, fg_color="#3E2723", bg_color="transparent", corner_radius=16, border_color="#A5D6A7", border_width=2, width=420, height=65)
+        f_perf.place(relx=0.38, y=360, anchor="n")
+        ctk.CTkLabel(f_perf, text="🌟 Perfect! No weak letters! 🌟", font=_font(20, "bold"), text_color="#A5D6A7").place(relx=0.5, rely=0.5, anchor="center")
+
+    # Instruction 9: Target container configured for your custom dancing monkey animation media files
+    media_panel = ctk.CTkFrame(root, fg_color="#27150C", bg_color="transparent", corner_radius=24, border_color="#FFD600", border_width=4, width=320, height=340)
+    media_panel.place(relx=0.80, rely=0.42, anchor="center")
+    media_panel.pack_propagate(False)
+    
+    # Static fallback representation. Replace label image attribute configuration with custom Tkinter GIF runtime engine logic if required.
+    p_fallback = os.path.join(BASE_DIR, "assets/images/animals/robo/monkey_happy.png")
+    if os.path.exists(p_fallback):
+        img_fb = ctk.CTkImage(light_image=Image.open(p_fallback).convert("RGBA"), size=(312, 332))
+        ctk.CTkLabel(media_panel, image=img_fb, text="", fg_color="transparent").place(relx=0.5, rely=0.5, anchor="center")
+    else:
+        ctk.CTkLabel(media_panel, text="🐵\n[Dance GIF Box]", font=_font(28, "bold"), text_color="#FFFFFF").place(relx=0.5, rely=0.5, anchor="center")
+
+    # Primary Action Row (Celebratory buttons styling matching window colors)
+    ctk.CTkButton(root, text="▶  Play Again", font=_font(28, "bold"), width=260, height=75, corner_radius=22, fg_color="#FFD600", hover_color="#FFA500", text_color="#3E2723", border_color="#3E2723", border_width=3, command=on_play_again, bg_color="transparent").place(relx=0.18, y=450, anchor="n")
+    ctk.CTkButton(root, text="✕  Quit", font=_font(28, "bold"), width=200, height=75, corner_radius=22, fg_color="#8B4513", hover_color="#5C2E0B", text_color="#FFFFFF", border_color="#000000", border_width=3, command=on_quit, bg_color="transparent").place(relx=0.50, y=450, anchor="n")
 
     return root
-
-
-# ─────────────────────────────────────────────
-#  STANDALONE TEST
-# ─────────────────────────────────────────────
-
-if __name__ == "__main__":
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("green")
-    app = ctk.CTk()
-    app.title("ABC Safari - Score Screen")
-    app.geometry(f"{SCREEN_W}x{SCREEN_H}")
-    app.resizable(False, False)
-
-    show_score_screen(
-        app,
-        player_name="Sajjad",
-        score=8,
-        stars=4,
-        weak_letters=["B", "Q"],
-        on_play_again=lambda: print("Play Again!"),
-        on_quit=app.destroy
-    )
-    app.mainloop()

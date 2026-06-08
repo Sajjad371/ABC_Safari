@@ -1,425 +1,110 @@
-# voice.py
-# ABC Safari — CCC1243 Artificial Intelligence | AIU
-# Member 5 (Voice/VUI) — Robo speaks and listens
-# Written cleanly so more levels can be added easily later
-# ─────────────────────────────────────────────────────────
- 
-import os
-import threading
-import time
-import urllib.request          # ← ADD line 9
-def _has_internet():           # ← ADD lines 10-15
+# -*- coding: utf-8 -*-
+"""
+ABC Safari - Voice Engine
+File: voice.py
+"""
+
+import os, threading, time, random, urllib.request
+
+def _has_internet():
     try:
         urllib.request.urlopen("https://www.google.com", timeout=2)
         return True
-    except:
-        return False
+    except Exception: return False
 
-INTERNET_AVAILABLE = _has_internet()   # ← ADD
-print(f"[voice.py] Engine: {'gTTS' if INTERNET_AVAILABLE else 'pyttsx3 (offline)'}")
+INTERNET_AVAILABLE = _has_internet()
 
-# ── Optional imports (safe if not installed yet) ──────────
 try:
     import pyttsx3
     PYTTSX3_AVAILABLE = True
 except ImportError:
     PYTTSX3_AVAILABLE = False
-    print("[voice.py] pyttsx3 not found. Install: pip install pyttsx3")
- 
+
 try:
     import speech_recognition as sr
     SR_AVAILABLE = True
 except ImportError:
     SR_AVAILABLE = False
-    print("[voice.py] SpeechRecognition not found. Install: pip install SpeechRecognition")
- 
-try:
-    from gtts import gTTS
-    import pygame
-    GTTS_AVAILABLE = True
-except ImportError:
-    GTTS_AVAILABLE = False
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 1 — ROBO VOICE LINES
-# ─────────────────────────────────────────────────────────
- 
+
 ROBO_LINES = {
     "welcome":          "Hi! I am Robo! Your jungle guide today!",
     "ask_name":         "What is your name, explorer?",
-    "name_heard":       "Hello {name}! Great to meet you!",
-    "name_not_heard":   "I did not catch that! Please type your name.",
     "game_start":       "Let us find some animals, {name}! Are you ready?",
     "question":         "What letter does this animal start with?",
-    "correct_1":        "Yes! Amazing {name}! You got it!",
-    "correct_2":        "Fantastic! You are so smart, {name}!",
-    "correct_3":        "Wonderful! Keep going, explorer!",
-    "correct_4":        "Brilliant! {name} is a true jungle champion!",
-    "wrong_1":          "Hmm! Try again, {name}, you can do it!",
-    "wrong_2":          "Not quite! Have another go!",
-    "hint_intro":       "Let me help you! Listen carefully...",
-    "hint_letter":      "The letter is {letter}! {letter} is for {animal}!",
-    "idle":             "Hey {name}! Are you still there?",
-    "idle_long":        "Take your time! I am right here with you.",
-    "milestone_5":      "5 badges, {name}! Halfway there!",
-    "milestone_10":     "10 badges! You are a jungle champion, {name}!",
     "game_end":         "Amazing adventure today, {name}!",
-    "game_end_score":   "You collected {score} badges! See you next time!",
-    "weak_letters":     "Practice the letters {letters} more next time!",
-    "level_2_start":    "Level 2! Now let us find animals for whole words!",
-    "level_2_correct":  "You spelled it right, {name}! Excellent!",
-    "level_2_wrong":    "Almost! Try spelling it again!",
-    "level_3_start":    "Level 3! Can you make a sentence, {name}?",
 }
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 2 — SPEAK FUNCTIONS
-# ─────────────────────────────────────────────────────────
- 
-def _fill(text, name="", letter="", animal="", score="", letters=""):
-    """Replaces placeholders in any ROBO_LINES string."""
-    return (text
-            .replace("{name}",    str(name))
-            .replace("{letter}",  str(letter))
-            .replace("{animal}",  str(animal))
-            .replace("{score}",   str(score))
-            .replace("{letters}", str(letters)))
- 
-def robo_speak(text):
+
+# Instruction 4: Broad pool of motivational expressions for wrong-answer selections
+WRONG_PHRASES = [
+    "Hmm! Try again, {name}, you can do it!",
+    "Not quite! Have another go, explorer!",
+    "Look closely at the card, {name}! Try picking another option!",
+    "Jungle explorers never give up! Let's choose a different letter!",
+]
+
+CORRECT_PHRASES = [
+    "Amazing, {name}! You got it!",
+    "Fantastic! You are so smart, {name}!",
+    "Wonderful! Keep going, explorer!",
+    "Brilliant! You are a true jungle champion!",
+]
+
+def robo_speak_sync(text):
+    """Reinforced voice engine: Prevents background tasks from cutting off early."""
     if not PYTTSX3_AVAILABLE:
-        print(f"[Robo says] {text}")
+        print(f"[Robo Alternative Engine]: {text}")
         return
-
-    def _speak():
-        try:
-            engine = pyttsx3.init()
-            engine.setProperty("rate", 145)
-            engine.setProperty("volume", 1.0)
-            engine.say(text)
-            engine.runAndWait()
-        except Exception as e:
-            print(f"[voice.py] robo_speak error: {e}")
-        finally:
-            try:
-                engine.stop()
-            except:
-                pass
-
-    thread = threading.Thread(target=_speak, daemon=True)
-    thread.start()
-    thread.join()   # ← ADD THIS — waits for speech to fully finish
-                    #   before returning, so next call never overlaps
- 
- 
-def robo_speak_gtts(text):
-    """
-    Makes Robo speak using Google TTS — sounds more natural.
-    Needs internet. Falls back to pyttsx3 if not available.
- 
-    Usage:
-        robo_speak_gtts("Hello explorer!")
-    """
-    if not GTTS_AVAILABLE:
-        robo_speak(text)
-        return
- 
-    def _speak_gtts():
-        try:
-            tts = gTTS(text=text, lang="en", slow=False)
-            filename = f"robo_temp_{int(time.time()*1000)}.mp3"
-            tts.save(filename)
-            pygame.mixer.init()
-            pygame.mixer.music.load(filename)
-            pygame.mixer.music.play()
-            while pygame.mixer.music.get_busy():
-                time.sleep(0.1)
-            os.remove(filename)     
-        except Exception as e:
-            print(f"[voice.py] gTTS FAILED — reason: {type(e).__name__}: {e}")
-            print(f"[voice.py] Falling back to pyttsx3...")
-            robo_speak(text)
- 
-    thread = threading.Thread(target=_speak_gtts, daemon=True)
-    thread.start()
-    thread.join()   # ← ADD THIS — waits for speech to fully finish
- 
- 
-def robo_say(line_key, name="", letter="", animal="", score="", letters="", use_gtts=False):
-    """
-    The main function to make Robo speak.
-    Picks the right line from ROBO_LINES, fills in the placeholders,
-    and speaks it. Use this everywhere in main.py.
- 
-    Usage:
-        robo_say("correct_1", name="Amir")
-        robo_say("hint_letter", name="Sara", letter="L", animal="Lion")
-        robo_say("game_end_score", name="Amir", score=8)
-    """
-    text = ROBO_LINES.get(line_key, "")
-    if not text:
-        print(f"[voice.py] Unknown line key: {line_key}")
-        return
- 
-    filled = _fill(text, name=name, letter=letter,
-                   animal=animal, score=score, letters=letters)
- 
-    print(f"[Robo says] {filled}")
- 
-    if use_gtts:
-        robo_speak_gtts(filled)
-    else:
-        robo_speak(filled)
- 
- 
-def robo_say_correct(name="", count=1, use_gtts=False):
-    """
-    Speaks a correct-answer line. Rotates through 4 varieties
-    so the child hears something different each time.
- 
-    Usage:
-        robo_say_correct(name="Amir", count=correct_answer_count)
-    """
-    key = f"correct_{((count - 1) % 4) + 1}"
-    robo_say(key, name=name, use_gtts=use_gtts)
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 3 — LISTEN FUNCTIONS
-# ─────────────────────────────────────────────────────────
- 
-def listen_for_name(timeout=6):
-    """
-    Opens microphone and listens for the child's name.
-    Returns the spoken name as a clean string.
-    Returns None if nothing was heard or mic failed.
- 
-    Usage:
-        name = listen_for_name()
-        if name:
-            set_child_name(name)
-    """
-    if not SR_AVAILABLE:
-        print("[voice.py] SpeechRecognition not available.")
-        return None
- 
-    recognizer = sr.Recognizer()
-    recognizer.pause_threshold = 0.8
- 
     try:
-        with sr.Microphone() as source:
-            recognizer.adjust_for_ambient_noise(source, duration=0.5)
-            print("[Robo listening for name...]")
-            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=5)
- 
-        spoken = recognizer.recognize_google(audio).strip().lower()
-        words = spoken.split()
-        name = words[-1].capitalize() if words else spoken.capitalize()
-        print(f"[voice.py] Name heard: {name}")
-        return name
- 
-    except sr.WaitTimeoutError:
-        print("[voice.py] No name heard — timed out.")
-        return None
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 175)
+        engine.setProperty("volume", 1.0)
+        engine.say(text)
+        engine.runAndWait()
+        # Explicit shutdown clears background speech buffers safely
+        engine.stop()
+    except Exception as e:
+        print(f"Voice pipeline error encounter: {e}")
+
+def robo_say(line_key, name="", custom_text=None):
+    if custom_text:
+        text = custom_text
+    else:
+        text = ROBO_LINES.get(line_key, "")
+        if line_key == "wrong_random":
+            text = random.choice(WRONG_PHRASES)
+    
+    filled_text = text.replace("{name}", str(name))
+    print(f"[Robo Speech Out]: {filled_text}")
+    robo_speak_sync(filled_text)
+
+def robo_say_correct(name="", count=1):
+    base_phrase = random.choice(CORRECT_PHRASES)
+    filled_text = base_phrase.replace("{name}", str(name))
+    print(f"[Robo Speech Out]: {filled_text}")
+    robo_speak_sync(filled_text)
+
+def listen_for_letter(timeout=5):
+    if not SR_AVAILABLE: 
+        raise ImportError("speech_recognition library not available")
+    rec = sr.Recognizer()
+    rec.energy_threshold = 300 
+    rec.pause_threshold = 0.4
+    
+    # Check for microphone availability; with sr.Microphone() raises OSError if missing
+    with sr.Microphone() as source:
+        audio = rec.listen(source, timeout=timeout, phrase_time_limit=3)
+    
+    try:
+        spoken_str = rec.recognize_google(audio).strip().lower()
+        print(f"[Speech Recog Result]: {spoken_str}")
+        if spoken_str:
+            words = spoken_str.split()
+            for w in words:
+                if len(w) == 1 and w.isalpha():
+                    return w.upper()
+            return spoken_str[0].upper()
     except sr.UnknownValueError:
-        print("[voice.py] Could not understand the name.")
-        return None
-    except Exception as e:
-        print(f"[voice.py] listen_for_name error: {e}")
-        return None
- 
- 
-def listen_for_answer(timeout=4):
-    """
-    Opens microphone and listens for the child's answer (a letter or word).
-    Returns the first letter of what was spoken as lowercase string.
-    Returns None if nothing heard or mic failed.
- 
-    Usage:
-        answer = listen_for_answer()
-        if answer:
-            check_answer(answer, correct_letter)
-    """
-    if not SR_AVAILABLE:
-        print("[voice.py] SpeechRecognition not available.")
-        return None
- 
-    recognizer = sr.Recognizer()
-    recognizer.pause_threshold = 0.6
- 
-    try:
-        with sr.Microphone() as source:
-            recognizer.adjust_for_ambient_noise(source, duration=0.3)
-            print("[Robo listening for answer...]")
-            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=3)
- 
-        spoken = recognizer.recognize_google(audio).strip().lower()
-        print(f"[voice.py] Answer heard: '{spoken}'")
- 
-        if spoken:
-            return spoken[0]
-        return None
- 
-    except sr.WaitTimeoutError:
-        print("[voice.py] No answer heard — timed out.")
-        return None
-    except sr.UnknownValueError:
-        print("[voice.py] Could not understand the answer.")
-        return None
-    except Exception as e:
-        print(f"[voice.py] listen_for_answer error: {e}")
-        return None
- 
- 
-def listen_for_word(timeout=6):
-    """
-    Listens for a full word (used in Level 2 — word spelling).
-    Returns the full spoken word as a lowercase string.
-    Returns None if nothing heard.
- 
-    Usage (Level 2):
-        word = listen_for_word()
-        if word == correct_word:
-            ...
-    """
-    if not SR_AVAILABLE:
-        return None
- 
-    recognizer = sr.Recognizer()
-    recognizer.pause_threshold = 0.8
- 
-    try:
-        with sr.Microphone() as source:
-            recognizer.adjust_for_ambient_noise(source, duration=1.0)
-            print("[Robo listening for word...]")
-            audio = recognizer.listen(source, timeout=timeout, phrase_time_limit=4)
- 
-        spoken = recognizer.recognize_google(audio).strip().lower()
-        print(f"[voice.py] Word heard: '{spoken}'")
-        return spoken
- 
-    except Exception as e:
-        print(f"[voice.py] listen_for_word error: {e}")
-        return None
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 4 — ANSWER CHECKING
-# ─────────────────────────────────────────────────────────
- 
-def is_letter_correct(spoken, correct_letter):
-    """
-    Checks if the child's spoken answer matches the correct letter.
- 
-    Usage:
-        if is_letter_correct(spoken, "l"):
-            record_correct("L")
-    """
-    if spoken is None:
-        return False
-    return spoken.strip().lower()[0] == correct_letter.strip().lower()[0]
- 
- 
-def is_word_correct(spoken, correct_word):
-    """
-    Checks if the full spoken word matches the correct word.
-    Used in Level 2.
- 
-    Usage:
-        if is_word_correct(spoken, "lion"):
-            record_correct("L")
-    """
-    if spoken is None:
-        return False
-    return spoken.strip().lower() == correct_word.strip().lower()
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 5 — ROBO EMOTION SIGNAL
-# ─────────────────────────────────────────────────────────
- 
-def get_robo_emotion(event):
-    """
-    Takes a game event string and returns the emotion name.
-    game_screen.py uses this to pick the right Robo PNG.
- 
-    Usage:
-        emotion = get_robo_emotion("correct")
-        update_robo_image(emotion)
-    """
-    emotion_map = {
-        "game_start":       "idle",
-        "question":         "idle",
-        "correct":          "happy",
-        "wrong_first":      "thinking",
-        "wrong_second":     "hint",
-        "mic_active":       "listening",
-        "idle_timeout":     "sleeping",
-        "game_end":         "happy",
-        "level_2_start":    "idle",
-        "level_2_correct":  "happy",
-        "level_2_wrong":    "thinking",
-        "level_3_start":    "idle",
-    }
-    return emotion_map.get(event, "idle")
- 
- 
-# ─────────────────────────────────────────────────────────
-# SECTION 6 — QUICK TEST
-# Run:  python voice.py
-# ─────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    print("=== voice.py TEST ===\n")
-
-    print("Test 1: Robo welcome...")
-    robo_say("welcome")
-    time.sleep(4)
-
-    print("Test 2: Speak with name...")
-    robo_say("correct_1", name="Amir")
-    time.sleep(4)
-
-    print("Test 3: Rotating correct answers...")
-    for i in range(1, 5):
-        robo_say_correct(name="Sara", count=i)
-        time.sleep(4)
-
-    print("Test 4: Hint line...")
-    robo_say("hint_letter", name="Amir", letter="L", animal="Lion")
-    time.sleep(5)
-
-    # ── LISTENING TESTS (were missing!) ──────────────────
-    print("\nTest 5: Listening for name...")
-    robo_say("ask_name")
-    time.sleep(3)
-    name = listen_for_name()
-    if name:
-        print(f"  ✅ Name captured: {name}")
-        robo_say("name_heard", name=name)
-    else:
-        print("  ❌ Name NOT captured — check mic/internet")
-        robo_say("name_not_heard")
-    time.sleep(4)
-
-    print("\nTest 6: Listening for animal answer...")
-    robo_say("question")
-    time.sleep(5)
-    answer = listen_for_answer()
-    if answer:
-        print(f"  ✅ Answer first letter: '{answer}'")
-        if is_letter_correct(answer, "l"):
-            print("  ✅ Correct for L!")
-            robo_say("correct_1", name=name or "explorer")
-        else:
-            print(f"  ❌ Wrong — heard '{answer}', expected 'l'")
-            robo_say("wrong_1", name=name or "explorer")
-    else:
-        print("  ❌ Nothing heard — check mic/internet")
-    time.sleep(5)
-
-    print("\nTest 7: Emotion mapping...")
-    for event in ["correct", "wrong_first", "mic_active", "idle_timeout"]:
-        print(f"  '{event}' → '{get_robo_emotion(event)}'")
-
-    print("\n=== All tests done ===")
+        raise ValueError("Could not understand! Speak closer/louder")
+    except sr.RequestError:
+        raise ConnectionError("Google Speech API offline. Check internet")
+    return None

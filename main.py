@@ -1,460 +1,126 @@
 # -*- coding: utf-8 -*-
-# main.py
-# ABC Safari - CCC1243 Artificial Intelligence | AIU
-# Member 1 (Lead) - Connects all files and runs the game
-# Run this file to start the game: python main.py
+"""
+ABC Safari - Controller Hub Core
+File: main.py
+"""
 
 import customtkinter as ctk
-import threading
-import time
-import random
-import os
-import sys
+import os, sys, threading
 
-# -----------------------------------------------------------------------
-# SECTION 1 - IMPORT ALL TEAM FILES
-# -----------------------------------------------------------------------
+try: import ai_engine
+except ImportError: ai_engine = None
 
-# Member 1 - AI brain
-try:
-    import ai_engine
-    AI_READY = True
-except ImportError:
-    AI_READY = False
-    print("[main.py] ai_engine.py not ready. Running in demo mode.")
+try: import voice
+except ImportError: voice = None
 
-# Member 5 - Voice
-try:
-    import voice
-    VOICE_READY = True
-except ImportError:
-    VOICE_READY = False
-    print("[main.py] voice.py not ready. Running without voice.")
+try: import score_tracker
+except ImportError: score_tracker = None
 
-# Member 3 - Game logic and questions
-try:
-    import game_logic
-    from data.questions import QUESTIONS
-    GAME_LOGIC_READY = True
-except ImportError:
-    GAME_LOGIC_READY = False
-    print("[main.py] game_logic.py or questions.py not ready. Demo mode.")
+from ui.welcome_screen import show_welcome_screen
+from ui.game_screen import show_game_screen
+from ui.score_screen import show_score_screen
 
-# Member 4 - Score tracker
-try:
-    import score_tracker
-    SCORE_READY = True
-except ImportError:
-    SCORE_READY = False
-    print("[main.py] score_tracker.py not ready.")
-
-# Member 2 - Welcome screen
-try:
-    from ui.welcome_screen import show_welcome_screen
-    WELCOME_READY = True
-except Exception as e:
-    WELCOME_READY = False
-    print(f"[main.py] ui/welcome_screen.py not ready: {e}")
-
-# Member 2 - Game screen
-try:
-    from ui.game_screen import show_game_screen
-    GAME_SCREEN_READY = True
-except Exception as e:
-    GAME_SCREEN_READY = False
-    print(f"[main.py] ui/game_screen.py not ready: {e}")
-
-# Member 2 - Score screen
-try:
-    from ui.score_screen import show_score_screen
-    SCORE_SCREEN_READY = True
-except Exception as e:
-    SCORE_SCREEN_READY = False
-    print(f"[main.py] ui/score_screen.py not ready: {e}")
-
-# -----------------------------------------------------------------------
-# SECTION 2 - SETTINGS
-# -----------------------------------------------------------------------
-
-APP_TITLE        = "ABC Safari"
-WINDOW_WIDTH     = 1280
-WINDOW_HEIGHT    = 720
-QUESTIONS_PER_GAME = 10
-
-# Correct paths based on your folder structure
-BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-PATH_ROBO   = os.path.join(BASE_DIR, "assets", "images", "robo")
-PATH_ANIMALS= os.path.join(BASE_DIR, "assets", "images", "animals")
-PATH_UI     = os.path.join(BASE_DIR, "assets", "images", "animals", "ui")
-PATH_SOUNDS = os.path.join(BASE_DIR, "assets", "sounds")
-PATH_FONTS  = os.path.join(BASE_DIR, "assets", "fonts")
-
-# -----------------------------------------------------------------------
-# SECTION 3 - SOUND
-# -----------------------------------------------------------------------
-
-SOUND_READY = False
-try:
-    import pygame
-    pygame.mixer.init()
-    SOUND_READY = True
-except Exception:
-    print("[main.py] Sound not available.")
-
-
-def play_sound(filename):
-    if not SOUND_READY:
-        return
-    path = os.path.join(PATH_SOUNDS, filename)
-    if os.path.exists(path):
-        try:
-            pygame.mixer.Sound(path).play()
-        except Exception as e:
-            print(f"[main.py] Sound error: {e}")
-
-
-# -----------------------------------------------------------------------
-# SECTION 4 - DEMO DATA (used only if game_logic not ready)
-# -----------------------------------------------------------------------
-
-DEMO_QUESTIONS = [
-    {"letter": "A", "animal": "Ant",      "image": os.path.join(PATH_ANIMALS, "ant.png")},
-    {"letter": "B", "animal": "Bear",     "image": os.path.join(PATH_ANIMALS, "bear.png")},
-    {"letter": "C", "animal": "Cat",      "image": os.path.join(PATH_ANIMALS, "cat.png")},
-    {"letter": "D", "animal": "Dog",      "image": os.path.join(PATH_ANIMALS, "DOG.png")},
-    {"letter": "E", "animal": "Elephant", "image": os.path.join(PATH_ANIMALS, "ELEPHANT.png")},
-    {"letter": "F", "animal": "Frog",     "image": os.path.join(PATH_ANIMALS, "FROG.png")},
-    {"letter": "G", "animal": "Giraffe",  "image": os.path.join(PATH_ANIMALS, "giraffe.png")},
-    {"letter": "H", "animal": "Hippo",    "image": os.path.join(PATH_ANIMALS, "hippo.png")},
-    {"letter": "I", "animal": "Iguana",   "image": os.path.join(PATH_ANIMALS, "iguana.png")},
-    {"letter": "J", "animal": "Jaguar",   "image": os.path.join(PATH_ANIMALS, "jaguar.png")},
-    {"letter": "K", "animal": "Kangaroo", "image": os.path.join(PATH_ANIMALS, "KANGAROO.png")},
-    {"letter": "L", "animal": "Lion",     "image": os.path.join(PATH_ANIMALS, "lion.png")},
-    {"letter": "M", "animal": "Monkey",   "image": os.path.join(PATH_ANIMALS, "MONKEY.png")},
-    {"letter": "N", "animal": "Nightingale","image":os.path.join(PATH_ANIMALS, "nightingale.png")},
-    {"letter": "O", "animal": "Owl",      "image": os.path.join(PATH_ANIMALS, "owl.png")},
-    {"letter": "Q", "animal": "Quail",    "image": os.path.join(PATH_ANIMALS, "quail.png")},
-    {"letter": "R", "animal": "Rabbit",   "image": os.path.join(PATH_ANIMALS, "rabbit.png")},
-    {"letter": "S", "animal": "Snake",    "image": os.path.join(PATH_ANIMALS, "snake.png")},
-    {"letter": "T", "animal": "Tiger",    "image": os.path.join(PATH_ANIMALS, "tiger.png")},
-    {"letter": "U", "animal": "Unicorn",  "image": os.path.join(PATH_ANIMALS, "unicorn.png")},
-    {"letter": "V", "animal": "Vulture",  "image": os.path.join(PATH_ANIMALS, "vulture.png")},
-    {"letter": "W", "animal": "Whale",    "image": os.path.join(PATH_ANIMALS, "whale.png")},
-    {"letter": "Y", "animal": "Yak",      "image": os.path.join(PATH_ANIMALS, "yak.png")},
-    {"letter": "Z", "animal": "Zebra",    "image": os.path.join(PATH_ANIMALS, "zebra.png")},
-]
-
-
-def get_question_index(letter):
-    """Returns index in DEMO_QUESTIONS for a given letter."""
-    for i, q in enumerate(DEMO_QUESTIONS):
-        if q["letter"] == letter.upper():
-            return i
-    return 0
-
-
-def get_next_letter():
-    """Gets next letter from ai_engine or random."""
-    if AI_READY:
-        try:
-            return ai_engine.get_next_letter_for_level()
-        except Exception:
-            pass
-    return random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-
-# -----------------------------------------------------------------------
-# SECTION 5 - MAIN APPLICATION CLASS
-# -----------------------------------------------------------------------
+SCREEN_W, SCREEN_H = 1280, 720
 
 class ABCSafariApp(ctk.CTk):
-
     def __init__(self):
         super().__init__()
-        self.title(APP_TITLE)
-        self.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+        self.title("ABC Safari")
+        self.geometry(f"{SCREEN_W}x{SCREEN_H}")
         self.resizable(False, False)
-        self.configure(fg_color="#1A3A2A")
+        self.configure(fg_color="#1E4620")  # Set window background to dark green to prevent white corners on rounded widgets
+        
+        self.player_name = "Explorer"
+        self.score_session = 0
+        self.question_track_idx = 0
+        self.max_questions = 10
+        
+        self.launch_welcome_view()
 
-        # Game state
-        self.child_name    = ""
-        self.current_letter = ""
-        self.questions_done = 0
+    def launch_welcome_view(self):
+        show_welcome_screen(self, on_start=self._handle_onboarding_trigger)
+        if voice:
+            threading.Thread(target=lambda: voice.robo_say("welcome"), daemon=True).start()
 
-        play_sound("game_start.wav")
-        self.show_welcome()
+    def _handle_onboarding_trigger(self, raw_input_name):
+        self.player_name = raw_input_name.strip() if raw_input_name.strip() else "Explorer"
+        self.score_session = 0
+        self.question_track_idx = 0
+        
+        if ai_engine:
+            ai_engine.set_child_name(self.player_name)
+            ai_engine.start_session()
+        if score_tracker:
+            score_tracker.start_session()
+            
+        if voice:
+            threading.Thread(target=lambda: voice.robo_say("game_start", name=self.player_name), daemon=True).start()
+            
+        self.launch_game_view()
 
-    # -------------------------------------------------------------------
-    # WELCOME SCREEN
-    # -------------------------------------------------------------------
-
-    def show_welcome(self):
-        """Show welcome screen from ui/welcome_screen.py"""
-        for w in self.winfo_children():
-            w.destroy()
-
-        if WELCOME_READY:
-            show_welcome_screen(self, on_start=self._on_start)
-        else:
-            # Simple fallback if ui/welcome_screen.py missing
-            import customtkinter as ctk
-            ctk.CTkLabel(
-                self, text="ABC Safari",
-                font=("Arial", 52, "bold"),
-                text_color="#FFD700"
-            ).place(relx=0.5, rely=0.25, anchor="center")
-            name_var = ctk.StringVar()
-            ctk.CTkEntry(
-                self, textvariable=name_var,
-                placeholder_text="Your name...",
-                font=("Arial", 28), width=400, height=60,
-                fg_color="white", text_color="black"
-            ).place(relx=0.5, rely=0.45, anchor="center")
-            ctk.CTkButton(
-                self, text="START",
-                font=("Arial", 36, "bold"),
-                width=280, height=70,
-                fg_color="#2D8A4E",
-                command=lambda: self._on_start(name_var.get())
-            ).place(relx=0.5, rely=0.62, anchor="center")
-
-        if VOICE_READY:
-            threading.Thread(
-                target=lambda: (time.sleep(0.5),
-                                voice.robo_say("welcome")),
-                daemon=True
-            ).start()
-
-    # -------------------------------------------------------------------
-    # START GAME — called by welcome screen
-    # -------------------------------------------------------------------
-
-    def _on_start(self, raw_name):
-        """Called when child presses START on welcome screen."""
-        name = raw_name.strip().capitalize() if raw_name.strip() else "Explorer"
-        self.child_name    = name
-        self.questions_done = 0
-
-        if AI_READY:
+    def launch_game_view(self):
+        # Instruction 8: Integrated central routing loop for Back, Next, Home, and End operations
+        def handle_navigation_routing(action_type, current_score, absolute_target_index):
+            self.score_session = current_score
+            
             try:
-                ai_engine.set_child_name(name)
-                ai_engine.start_session()
-            except Exception:
-                pass
-
-        if SCORE_READY:
-            try:
-                score_tracker.start_session()
-            except Exception:
-                pass
-
-        if VOICE_READY:
-            threading.Thread(
-                target=lambda: voice.robo_say("game_start", name=name),
-                daemon=True
-            ).start()
-
-        self.current_letter = get_next_letter()
-        self.after(500, self.show_game)
-
-    # -------------------------------------------------------------------
-    # GAME SCREEN
-    # -------------------------------------------------------------------
-
-    def show_game(self):
-        """Show game screen from ui/game_screen.py"""
-        for w in self.winfo_children():
-            w.destroy()
-
-        # Current score
-        score = 0
-        if SCORE_READY:
-            try:
-                score = score_tracker.get_session_summary().get("correct", 0)
-            except Exception:
-                pass
-
-        # Question index for current letter
-        q_index = get_question_index(self.current_letter)
-
-        def on_answer(correct, new_score, next_index):
-            """Called by game_screen after child answers."""
-            if correct:
-                if AI_READY:
-                    try:
-                        ai_engine.record_correct(self.current_letter)
-                    except Exception:
-                        pass
-                if SCORE_READY:
-                    try:
-                        score_tracker.add_correct(self.current_letter)
-                    except Exception:
-                        pass
-                if VOICE_READY:
-                    threading.Thread(
-                        target=lambda: voice.robo_say_correct(
-                            name=self.child_name, count=new_score),
-                        daemon=True
-                    ).start()
-                self.questions_done += 1
-            else:
-                if AI_READY:
-                    try:
-                        ai_engine.record_mistake(self.current_letter)
-                    except Exception:
-                        pass
-                if SCORE_READY:
-                    try:
-                        score_tracker.add_wrong(self.current_letter)
-                    except Exception:
-                        pass
-                if VOICE_READY:
-                    threading.Thread(
-                        target=lambda: voice.robo_say(
-                            "wrong_1", name=self.child_name),
-                        daemon=True
-                    ).start()
-
-            # End of game?
-            if self.questions_done >= QUESTIONS_PER_GAME:
-                self.after(600, self.show_score)
+                import pygame
+                if pygame.mixer.get_init():
+                    pygame.mixer.stop()
+            except Exception: pass
+            
+            if action_type == "home":
+                self.launch_welcome_view()
                 return
+            elif action_type == "end":
+                self.launch_score_view()
+                return
+                
+            if absolute_target_index < 0:
+                absolute_target_index = 0
+                
+            if absolute_target_index >= self.max_questions:
+                self.launch_score_view()
+                return
+                
+            self.question_track_idx = absolute_target_index
+            self.launch_game_view()
 
-            # Next letter
-            self.current_letter = get_next_letter()
-            self.after(200, self.show_game)
+        def voice_mic_wrapper():
+            if voice:
+                captured = voice.listen_for_letter()
+                # If mic processing picks up a matching character code, code behavior handles validation hooks here
 
-        def on_mic():
-            if VOICE_READY:
-                threading.Thread(
-                    target=voice.listen_for_letter,
-                    daemon=True
-                ).start()
+        show_game_screen(
+            self, player_name=self.player_name, score=self.score_session,
+            q_index=self.question_track_idx, on_answer=None,
+            on_mic=voice_mic_wrapper, on_navigate=handle_navigation_routing
+        )
 
-        if GAME_SCREEN_READY:
-            show_game_screen(
-                self,
-                player_name=self.child_name,
-                score=score,
-                q_index=q_index,
-                on_answer=on_answer,
-                on_mic=on_mic
-            )
-        else:
-            # Fallback message if ui/game_screen.py missing
-            ctk.CTkLabel(
-                self,
-                text="Game screen not found!\nCheck ui/game_screen.py",
-                font=("Arial", 28),
-                text_color="white"
-            ).place(relx=0.5, rely=0.5, anchor="center")
+    def launch_score_view(self):
+        stars_calculated = 3
+        weak_list = []
+        if score_tracker:
+            summary = score_tracker.get_session_summary()
+            stars_calculated = summary.get("stars", 3)
+            weak_list = summary.get("weak_letters", [])
 
-    # -------------------------------------------------------------------
-    # SCORE SCREEN
-    # -------------------------------------------------------------------
+        if voice:
+            threading.Thread(target=lambda: voice.robo_say("game_end", name=self.player_name), daemon=True).start()
 
-    def show_score(self):
-        """Show score screen from ui/score_screen.py"""
-        for w in self.winfo_children():
-            w.destroy()
+        show_score_screen(
+            self, player_name=self.player_name, score=self.score_session,
+            stars=stars_calculated, weak_letters=weak_list,
+            on_play_again=self._restart_session_trigger, on_quit=self.destroy
+        )
 
-        score = self.questions_done
-        stars = 0
-        weak  = []
-
-        if SCORE_READY:
-            try:
-                summary = score_tracker.get_session_summary()
-                score   = summary.get("correct", 0)
-                stars   = summary.get("stars",   0)
-                weak    = summary.get("weak_letters", [])
-            except Exception:
-                pass
-
-        if VOICE_READY:
-            threading.Thread(
-                target=lambda: voice.robo_say(
-                    "game_end", name=self.child_name),
-                daemon=True
-            ).start()
-
-        play_sound("milestone.wav")
-
-        if SCORE_SCREEN_READY:
-            show_score_screen(
-                self,
-                player_name=self.child_name,
-                score=score,
-                stars=stars,
-                weak_letters=weak,
-                on_play_again=self._play_again,
-                on_quit=self.destroy
-            )
-        else:
-            # Simple fallback score screen
-            ctk.CTkLabel(
-                self,
-                text=f"Great job {self.child_name}!\nScore: {score} ⭐",
-                font=("Arial", 44, "bold"),
-                text_color="#FFD700"
-            ).place(relx=0.5, rely=0.35, anchor="center")
-            ctk.CTkButton(
-                self, text="Play Again",
-                font=("Arial", 36, "bold"),
-                width=280, height=70,
-                fg_color="#2D8A4E",
-                command=self._play_again
-            ).place(relx=0.38, rely=0.65, anchor="center")
-            ctk.CTkButton(
-                self, text="Quit",
-                font=("Arial", 36, "bold"),
-                width=220, height=70,
-                fg_color="#8B0000",
-                command=self.destroy
-            ).place(relx=0.62, rely=0.65, anchor="center")
-
-    # -------------------------------------------------------------------
-    # PLAY AGAIN
-    # -------------------------------------------------------------------
-
-    def _play_again(self):
-        if AI_READY:
-            try:
-                ai_engine.start_session()
-            except Exception:
-                pass
-        if SCORE_READY:
-            try:
-                score_tracker.start_session()
-            except Exception:
-                pass
-        self.questions_done  = 0
-        self.current_letter  = get_next_letter()
-        self.show_game()
-
-
-# -----------------------------------------------------------------------
-# SECTION 6 - RUN
-# -----------------------------------------------------------------------
+    def _restart_session_trigger(self):
+        if ai_engine: ai_engine.start_session()
+        if score_tracker: score_tracker.start_session()
+        self.score_session = 0
+        self.question_track_idx = 0
+        self.launch_game_view()
 
 if __name__ == "__main__":
-    print("=" * 50)
-    print("  ABC Safari - Starting...")
-    print("=" * 50)
-    print(f"  Python:        {sys.version.split()[0]}")
-    print(f"  ai_engine:     {'OK' if AI_READY else 'DEMO'}")
-    print(f"  voice:         {'OK' if VOICE_READY else 'OFF'}")
-    print(f"  game_logic:    {'OK' if GAME_LOGIC_READY else 'DEMO'}")
-    print(f"  score_tracker: {'OK' if SCORE_READY else 'OFF'}")
-    print(f"  welcome_screen:{'OK' if WELCOME_READY else 'MISSING'}")
-    print(f"  game_screen:   {'OK' if GAME_SCREEN_READY else 'MISSING'}")
-    print(f"  score_screen:  {'OK' if SCORE_SCREEN_READY else 'MISSING'}")
-    print(f"  Sound:         {'OK' if SOUND_READY else 'OFF'}")
-    print("=" * 50)
-    print()
-
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("green")
-
     app = ABCSafariApp()
     app.mainloop()
