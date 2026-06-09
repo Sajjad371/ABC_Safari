@@ -80,6 +80,9 @@ class ScoreCanvas:
         self.parent.after(30, self._animate)
 
 def show_score_screen(root, player_name="Explorer", score=0, stars=0, weak_letters=None, on_play_again=None, on_quit=None):
+    if hasattr(root, "_game_layout"):
+        try: delattr(root, "_game_layout")
+        except Exception: pass
     if weak_letters is None: weak_letters = []
     for w in root.winfo_children(): w.destroy()
     # Configure root background to match the dark canvas overlay exactly, eliminating green corner fringes on all widgets

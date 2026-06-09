@@ -271,10 +271,13 @@ class StarBurst:
 #  MAIN FUNCTION
 # ────────────────────────────────────────────────────────────
 
-def show_welcome_screen(root, on_start=None):
+def show_welcome_screen(root, on_start=None, welcome_text=None):
+    if hasattr(root, "_game_layout"):
+        try: delattr(root, "_game_layout")
+        except Exception: pass
     for w in root.winfo_children():
         w.destroy()
-    root.configure(fg_color="#1E4620")
+    root.configure(fg_color="#121212")
 
     # ── Animated overlay (places canvas, draws background and logo directly on canvas) ──
     overlay = JungleOverlay(root)
@@ -282,59 +285,79 @@ def show_welcome_screen(root, on_start=None):
     # ── Whiteboard Name Card Area (Solid white background with brown/gold border and rounded transparent corners) ──
     card_frame = ctk.CTkFrame(
         root, fg_color="#FFFFFF", bg_color="transparent", corner_radius=24,
-        border_color="#8B4513", border_width=4, width=420, height=220
+        border_color="#8B4513", border_width=4, width=390, height=200
     )
     card_frame.place(relx=0.50, rely=0.52, anchor="center")
     card_frame.pack_propagate(False)
     
     ctk.CTkLabel(
         card_frame, text="👋  Welcome, Explorer!",
-        font=_font(26, "bold"), text_color="#3E2723"
-    ).pack(pady=(15, 5))
+        font=_font(22, "bold"), text_color="#3E2723"
+    ).pack(pady=(10, 2))
 
     ctk.CTkLabel(
         card_frame, text="What is your name?",
-        font=_font(20), text_color="#5D4037"
-    ).pack(pady=(0, 6))
+        font=_font(16), text_color="#5D4037"
+    ).pack(pady=(0, 4))
 
     name_var = ctk.StringVar()
     entry = ctk.CTkEntry(
         card_frame, textvariable=name_var,
         placeholder_text="Type your name here...",
-        font=_font(20, "bold"), width=380, height=52,
-        corner_radius=14, fg_color="#FFFFFF",
-        border_color="#8B4513", border_width=3,
+        font=_font(16, "bold"), width=340, height=36,
+        corner_radius=12, fg_color="#FFFFFF",
+        border_color="#8B4513", border_width=2.5,
         text_color="#3E2723"
     )
-    entry.pack(padx=24, pady=6)
+    entry.pack(padx=24, pady=4)
     entry.focus()
+
+    difficulty_var = ctk.StringVar(value="Medium")
+    seg_button = ctk.CTkSegmentedButton(
+        card_frame, values=["Easy", "Medium", "Hard"],
+        variable=difficulty_var,
+        font=_font(14, "bold"),
+        fg_color="#F5F5F5",
+        unselected_color="#FFFFFF",
+        unselected_hover_color="#FFFDE7",
+        selected_color="#FFF9C4",
+        selected_hover_color="#FFF59D",
+        text_color="#3E2723"
+    )
+    seg_button.pack(pady=4)
 
     def start():
         n = name_var.get().strip() or "Explorer"
+        diff = difficulty_var.get()
         if on_start:
-            on_start(n)
+            on_start(n, diff)
 
     btn = ctk.CTkButton(
         card_frame, text="▶  START ADVENTURE",
-        font=_font(22, "bold"), width=260, height=44,
-        corner_radius=20, fg_color="#FF9800",
+        font=_font(18, "bold"), width=240, height=38,
+        corner_radius=18, fg_color="#FF9800",
         hover_color="#E65100", text_color="#FFFFFF",
         border_color="#FFD54F", border_width=3,
         command=start, bg_color="transparent"
     )
-    btn.pack(pady=10)
+    btn.pack(pady=6)
     entry.bind("<Return>", lambda e: start())
 
     # ── Speech Bubble Placement ──
     bubble = ctk.CTkFrame(root, fg_color="#FFFDE7", bg_color="transparent", corner_radius=18,
                           border_color="#FFD54F", border_width=3,
-                          width=460, height=65)
-    bubble.place(relx=0.5, y=640, anchor="n")
+                          width=480, height=125)
+    bubble.place(relx=0.5, y=585, anchor="n")
+    
+    if not welcome_text:
+        welcome_text = "Hi! 🌴  I'm Robo! Let's learn the alphabet!"
+    
+    full_bubble_text = f"{welcome_text}\nType your name and press START!"
     
     ctk.CTkLabel(bubble,
-                 text="Hi! 🌴  I'm Robo! Let's learn the alphabet!\nType your name and press START!",
-                 font=_font(15, "bold"), text_color="#4E342E",
-                 wraplength=430).place(relx=0.5, rely=0.5, anchor="center")
+                 text=full_bubble_text,
+                 font=_font(13, "bold"), text_color="#4E342E",
+                 wraplength=450).place(relx=0.5, rely=0.5, anchor="center")
     BubblePulse(root, bubble)
 
     # ── Star burst ──
