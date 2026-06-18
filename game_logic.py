@@ -1,7 +1,6 @@
 import pygame
 import random
-from data.questions 
-import QUESTIONS
+from data.questions import QUESTIONS
 
 def load_question(letter):
     for q in QUESTIONS:
@@ -13,7 +12,6 @@ def generate_choices(correct_letter):
     all_letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     wrong = [l for l in all_letters if l != correct_letter.upper()]
     three_wrong = random.sample(wrong, 3)
-    # FIX: Added the missing '+' to concatenate the lists
     choices = three_wrong + [correct_letter.upper()]
     random.shuffle(choices)
     return choices
@@ -41,10 +39,7 @@ def play_animal_sound(letter):
         try:
             pygame.mixer.init()
             pygame.mixer.Sound(q["sound"]).play()
-<<<<<<< Updated upstream
             print(f"Playing safari sound track: {q['sound']}")
-=======
->>>>>>> Stashed changes
         except Exception:
             print(f"animal sound played for {letter}")
 

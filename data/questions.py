@@ -16,29 +16,29 @@ ANIMALS = [
     },
     {
         "letter": "B",
-        "animal": "Butterfly",
-        "image": "assets/images/animals/butterfly.png",
-        "sound": "assets/sounds/animals/butterfly.ogg",
-        "hint": "Colorful, magical, gentle",
-        "voice_text": "Correct! That's Butterfly!",
+        "animal": "Bear",
+        "image": "assets/images/animals/bear.png",
+        "sound": "assets/sounds/animals/bear.ogg",
+        "hint": "Big, furry, powerful",
+        "voice_text": "Correct! That's Bear!",
         "difficulty": "Easy"
     },
     {
         "letter": "C",
-        "animal": "Chick",
-        "image": "assets/images/animals/chick.png",
-        "sound": "assets/sounds/animals/chick.ogg",
-        "hint": "Fluffy, yellow, baby",
-        "voice_text": "Correct! That's Chick!",
+        "animal": "Cat",
+        "image": "assets/images/animals/cat.png",
+        "sound": "assets/sounds/animals/cat.ogg",
+        "hint": "Fluffy, independent, cute",
+        "voice_text": "Correct! That's Cat!",
         "difficulty": "Easy"
     },
     {
         "letter": "D",
-        "animal": "Deer",
-        "image": "assets/images/animals/deer.png",
-        "sound": "assets/sounds/animals/deer.ogg",
-        "hint": "Gentle, graceful, beautiful",
-        "voice_text": "Correct! That's Deer!",
+        "animal": "Dog ",
+        "image": "assets/images/animals/dog.png",
+        "sound": "assets/sounds/animals/dog.ogg",
+        "hint": "Loyal, friendly, playful",
+        "voice_text": "Correct! That's Dog!",
         "difficulty": "Easy"
     },
     {
@@ -52,11 +52,11 @@ ANIMALS = [
     },
     {
         "letter": "F",
-        "animal": "Flamingo",
-        "image": "assets/images/animals/flamingo.png",
-        "sound": "assets/sounds/animals/flamingo.ogg",
-        "hint": "Pink, beautiful, gentle",
-        "voice_text": "Correct! That's Flamingo!",
+        "animal": "Frog",
+        "image": "assets/images/animals/frog.png",
+        "sound": "assets/sounds/animals/frog.ogg",
+        "hint": "Green, hopping, aquatic",
+        "voice_text": "Correct! That's Frog!",
         "difficulty": "Medium"
     },
     {
@@ -70,20 +70,20 @@ ANIMALS = [
     },
     {
         "letter": "H",
-        "animal": "Hedgehog",
-        "image": "assets/images/animals/hedgehog.png",
-        "sound": "assets/sounds/animals/hedgehog.ogg",
-        "hint": "Cute, round, safe",
-        "voice_text": "Correct! That's Hedgehog!",
+        "animal": "Hippo",
+        "image": "assets/images/animals/hippo.png",
+        "sound": "assets/sounds/animals/hippo.ogg",
+        "hint": "Big, friendly, aquatic",
+        "voice_text": "Correct! That's Hippo!",
         "difficulty": "Medium"
     },
     {
         "letter": "I",
-        "animal": "Ibis",
-        "image": "assets/images/animals/ibis.png",
-        "sound": "assets/sounds/animals/ibis.ogg",
-        "hint": "Elegant bird, colorful",
-        "voice_text": "Correct! That's Ibis!",
+        "animal": "Iguana",
+        "image": "assets/images/animals/iguanas.png",
+        "sound": "assets/sounds/animals/iguanas.ogg",
+        "hint": "Green, scaly, herbivorous",
+        "voice_text": "Correct! That's Iguana!",
         "difficulty": "Medium"
     },
     {
@@ -97,29 +97,29 @@ ANIMALS = [
     },
     {
         "letter": "K",
-        "animal": "Kitten",
-        "image": "assets/images/animals/kitten.png",
-        "sound": "assets/sounds/animals/kitten.ogg",
-        "hint": "Cute, cuddly, playful",
-        "voice_text": "Correct! That's Kitten!",
-        "difficulty": "Easy"
+        "animal": "Kangaroo",
+        "image": "assets/images/animals/kangaroo.png",
+        "sound": "assets/sounds/animals/kangaroo.ogg",
+        "hint": "Strong, hopping, marsupial",
+        "voice_text": "Correct! That's Kangaroo!",
+        "difficulty": "Medium"
     },
     {
         "letter": "L",
-        "animal": "Lamb",
-        "image": "assets/images/animals/lamb.png",
-        "sound": "assets/sounds/animals/lamb.ogg",
-        "hint": "Fluffy, gentle, baby sheep",
-        "difficulty": "Easy",
-        "voice_text": "Correct! That's Lamb!"
+        "animal": "Lion",
+        "image": "assets/images/animals/lion.png",
+        "sound": "assets/sounds/animals/lion.ogg",
+        "hint": "King of the jungle, majestic",
+        "difficulty": "Medium",
+        "voice_text": "Correct! That's Lion!"
     },
     {
         "letter": "M",
-        "animal": "Manatee",
-        "image": "assets/images/animals/manatee.png",
-        "sound": "assets/sounds/animals/manatee.ogg",
-        "hint": "Gentle giant, slow, cute",
-        "voice_text": "Correct! That's Manatee!",
+        "animal": "Monkey",
+        "image": "assets/images/animals/monkey.png",
+        "sound": "assets/sounds/animals/monkey.ogg",
+        "hint": "Playful, intelligent, social",
+        "voice_text": "Correct! That's Monkey!",
         "difficulty": "Medium"
     },
     {
@@ -133,29 +133,29 @@ ANIMALS = [
     },
     {
         "letter": "O",
-        "animal": "Ostrich",
-        "image": "assets/images/animals/ostrich.png",
-        "sound": "assets/sounds/animals/ostrich.ogg",
-        "hint": "Big but silly, funny",
-        "voice_text": "Correct! That's Ostrich!",
+        "animal": "Owl",
+        "image": "assets/images/animals/owl.png",
+        "sound": "assets/sounds/animals/owl.ogg",
+        "hint": " wise, nocturnal, silent",
+        "voice_text": "Correct! That's Owl!",
         "difficulty": "Medium"
     },
     {
         "letter": "P",
-        "animal": "Penguin",
-        "image": "assets/images/animals/penguin.png",
-        "sound": "assets/sounds/animals/penguin.ogg",
-        "hint": "Cute, waddles, funny",
-        "voice_text": "Correct! That's Penguin!",
-        "difficulty": "Easy"
+        "animal": "Parrot",
+        "image": "assets/images/animals/parrot.png",
+        "sound": "assets/sounds/animals/parrot.ogg",
+        "hint": "Colorful, chatty, intelligent",
+        "voice_text": "Correct! That's Parrot!",
+        "difficulty": "Medium"
     },
     {
         "letter": "Q",
-        "animal": "Quokka",
-        "image": "assets/images/animals/quokka.png",
-        "sound": "assets/sounds/animals/quokka.ogg",
-        "hint": "Smiley face, happiest animal",
-        "voice_text": "Correct! That's Quokka!",
+        "animal": "Quail",
+        "image": "assets/images/animals/quail.png",
+        "sound": "assets/sounds/animals/quail.ogg",
+        "hint": "Small, brown, tasty",
+        "voice_text": "Correct! That's Quail!",
         "difficulty": "Medium"
     },
     {
@@ -169,39 +169,39 @@ ANIMALS = [
     },
     {
         "letter": "S",
-        "animal": "Seahorse",
-        "image": "assets/images/animals/seahorse.png",
-        "sound": "assets/sounds/animals/seahorse.ogg",
-        "hint": "Magical, colorful, unique",
-        "voice_text": "Correct! That's Seahorse!",
+        "animal": "Snake",
+        "image": "assets/images/animals/snake.png",
+        "sound": "assets/sounds/animals/snake.ogg",
+        "hint": "Slithery, scales, venomous",
+        "voice_text": "Correct! That's Snake!",
         "difficulty": "Medium"
     },
     {
         "letter": "T",
-        "animal": "Turtle",
-        "image": "assets/images/animals/turtle.png",
-        "sound": "assets/sounds/animals/turtle.ogg",
-        "hint": "Safe, slow, protected shell",
-        "voice_text": "Correct! That's Turtle!",
-        "difficulty": "Easy"
+        "animal": "Tiger",
+        "image": "assets/images/animals/tiger.png",
+        "sound": "assets/sounds/animals/tiger.ogg",
+        "hint": "Striped, powerful, fierce",
+        "voice_text": "Correct! That's Tiger!",
+        "difficulty": "Medium"
     },
     {
         "letter": "U",
-        "animal": "Uakari",
-        "image": "assets/images/animals/uakari.png",
-        "sound": "assets/sounds/animals/uakari.ogg",
-        "hint": "Friendly monkey, red face",
-        "difficulty": "Medium",
-        "voice_text": "Correct! That's Uakari!"
+        "animal": "Unikon",
+        "image": "assets/images/animals/unikon.png",
+        "sound": "assets/sounds/animals/unikon.ogg",
+        "hint": "Mythical creature, glowing",
+        "difficulty": "Hard",
+        "voice_text": "Correct! That's Unikon!"
     },
     {
         "letter": "V",
-        "animal": "Squirrel",
-        "image": "assets/images/animals/squirrel.png",
-        "sound": "assets/sounds/animals/squirrel.ogg",
-        "hint": "Cute, bushy tail, playful",
-        "voice_text": "Correct! That's Squirrel!",
-        "difficulty": "Easy"
+        "animal": "Vulture",
+        "image": "assets/images/animals/vulture.png",
+        "sound": "assets/sounds/animals/vulture.ogg",
+        "hint": "Scavenger, bald head, powerful",
+        "voice_text": "Correct! That's Vulture!",
+        "difficulty": "Medium"
     },
     {
         "letter": "W",
@@ -214,11 +214,11 @@ ANIMALS = [
     },
     {
         "letter": "X",
-        "animal": "Axolotl",
-        "image": "assets/images/animals/axolotl.png",
-        "sound": "assets/sounds/animals/axolotl.ogg",
-        "hint": "Magical pink creature",
-        "voice_text": "Correct! That's Axolotl!",
+        "animal": "Xrayfish",
+        "image": "assets/images/animals/xrayfish.png",
+        "sound": "assets/sounds/animals/xrayfish.ogg",
+        "hint": "Transparent, electric blue",
+        "voice_text": "Correct! That's Xrayfish!",
         "difficulty": "Medium"
     },
     {

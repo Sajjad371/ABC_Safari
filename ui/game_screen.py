@@ -38,10 +38,7 @@ def play_sound(f):
 def play_animal_sound(file_key):
     if not _SND: return
     try:
-        # Stop any currently playing sounds first
-        try: pygame.mixer.stop()
-        except Exception: pass
-        
+        stop_all_sounds()
         path = os.path.join(SOUND_DIR, "animals", f"{file_key.lower()}.ogg")
         if not os.path.exists(path):
             path = os.path.join(SOUND_DIR, "animals", f"{file_key.lower()}.wav")
@@ -123,22 +120,16 @@ def load_font(size, weight="normal"):
     except Exception: pass
     return ctk.CTkFont(size=size, weight=weight)
 
-def load_animal_image(path_str, animal_name=None, 
-                      emoji=None, size=(260, 240)):
-    # Try loading real photo first
+def load_animal_image(path_str, animal_name=None, emoji=None, size=(260, 240)):
     if path_str:
         p = os.path.join(BASE_DIR, path_str)
         if os.path.exists(p) and os.path.getsize(p) > 100:
             try:
                 img = Image.open(p).convert("RGBA")
-                return ctk.CTkImage(
-                    light_image=img, 
-                    dark_image=img, 
-                    size=size)
+                return ctk.CTkImage(light_image=img, dark_image=img, size=size)
             except Exception:
                 pass
     
-    # Fallback: search animal folder by name
     if animal_name:
         stem = animal_name.lower().replace(" ","_").replace("-","_")
         for fname in os.listdir(ANIMAL_DIR):
@@ -148,14 +139,10 @@ def load_animal_image(path_str, animal_name=None,
                 if os.path.getsize(p) > 100:
                     try:
                         img = Image.open(p).convert("RGBA")
-                        return ctk.CTkImage(
-                            light_image=img, 
-                            dark_image=img, 
-                            size=size)
+                        return ctk.CTkImage(light_image=img, dark_image=img, size=size)
                     except Exception:
                         pass
     
-    # Final fallback: draw colored card with big letter
     char_to_draw = animal_name[0].upper() if animal_name else "?"
     return _make_emoji_card(char_to_draw, size)
 
@@ -164,22 +151,13 @@ def _make_emoji_card(emoji_char, size=(260, 240)):
     img = Image.new("RGBA", size, (255, 255, 255, 0))
     draw = ImageDraw.Draw(img)
     colors = ["#E8F5E9","#E3F2FD","#FFF8E1","#FCE4EC","#F3E5F5"]
-    import random
     bg_color = random.choice(colors)
-    draw.rounded_rectangle(
-        [0, 0, size[0]-1, size[1]-1], 
-        radius=20, 
-        fill=bg_color)
+    draw.rounded_rectangle([0, 0, size[0]-1, size[1]-1], radius=20, fill=bg_color)
     try:
         font = ImageFont.truetype("arial.ttf", 120)
     except Exception:
         font = ImageFont.load_default()
-    draw.text(
-        (size[0]//2, size[1]//2), 
-        emoji_char, 
-        font=font, 
-        anchor="mm", 
-        fill="#2E7D32")
+    draw.text((size[0]//2, size[1]//2), emoji_char, font=font, anchor="mm", fill="#2E7D32")
     return ctk.CTkImage(light_image=img, dark_image=img, size=size)
 
 def load_bg():
@@ -199,20 +177,17 @@ def load_bg():
 class JungleCanvas:
     def __init__(self, parent):
         self.parent = parent
-        # Canvas background changed from green to dark charcoal
         self.canvas = ctk.CTkCanvas(parent, bg="#121212", highlightthickness=0, width=SCREEN_W, height=SCREEN_H)
         self.canvas.place(x=0, y=0)
         self.t = 0.0
         self._bg_pil = load_bg()
         
-        # Load and draw background image EXACTLY ONCE to prevent layout blinking
         if self._bg_pil:
             self._bg_photo = ImageTk.PhotoImage(self._bg_pil)
             self.canvas.create_image(0, 0, image=self._bg_photo, anchor="nw", tags="background")
         else:
             self._bg_photo = None
             
-        # Interactive Waterfall Water Movement Vectors
         self.water_streams = []
         for _ in range(45):
             self.water_streams.append({
@@ -222,7 +197,6 @@ class JungleCanvas:
                 "length": random.randint(12, 28)
             })
 
-        # REAL BUTTERFLY ANIMATION SYSTEM INITIALIZATION
         self.bf_photos = []
         for fname in ["butterfly_1.png", "butterfly_2.png"]:
             p = os.path.join(UI_DIR, fname)
@@ -250,11 +224,9 @@ class JungleCanvas:
             if not self.canvas.winfo_exists():
                 return
             self.t += 0.04
-            # Delete only animation tags, keeping the background tag static and flicker-free
             self.canvas.delete("anim")
             W, H = SCREEN_W, SCREEN_H
 
-            # Update and redraw waterfall particles
             for stream in self.water_streams:
                 stream["y"] += stream["speed"]
                 if stream["y"] > 620:
@@ -265,7 +237,6 @@ class JungleCanvas:
                     fill="#E0F7FA", width=random.choice([2, 3, 4]), tags="anim"
                 )
 
-            # Hanging Jungle Vines
             for vx in range(80, W, 200):
                 ofs = 14 * math.sin(self.t + vx / 200)
                 self.canvas.create_line(
@@ -275,7 +246,6 @@ class JungleCanvas:
                 for ly in [70, 140, 210]:
                     self.canvas.create_oval(vx+ofs-10, ly-7, vx+ofs+10, ly+7, fill="#2E7D32", outline="", tags="anim")
 
-            # REAL BUTTERFLY FLIGHT ENGINE (Flies around on game screen!)
             for b in self.flock:
                 b["vx"] += random.uniform(-0.3, 0.3)
                 b["vy"] += random.uniform(-0.3, 0.3)
@@ -292,7 +262,6 @@ class JungleCanvas:
                 if len(self.bf_photos) >= 2:
                     self.canvas.create_image(b["x"], b["y"], image=self.bf_photos[b["frame"]], tags="anim")
 
-            # Swaying Ground Leaves
             for i in range(5):
                 lx = (180+i*240+int(22*math.sin(self.t/2.5+i))) % W
                 ly = H-80+16*math.sin(self.t/2+i*1.3)
@@ -360,7 +329,7 @@ class JailBars:
         else: self.canvas.after(1400, lambda: self.canvas.delete("jail"))
 
 # ────────────────────────────────────────────────────────────
-#  PROGRESS SCORE BAR (Refactored using transparent CTkProgressBar)
+#  PROGRESS SCORE BAR
 # ────────────────────────────────────────────────────────────
 
 class ScoreBar:
@@ -383,13 +352,11 @@ class ScoreBar:
 
 def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answer=None, on_mic=None, on_navigate=None, difficulty="Medium"):
     global current_question
-    stop_all_sounds() # Stop previous sounds start fresh
+    stop_all_sounds()
     try:
         root = parent
-        # Configure root with a dark charcoal background
         root.configure(fg_color="#121212")
 
-        # Filter QUESTION_BANK by difficulty parameter
         filtered_bank = [q for q in QUESTION_BANK if q.get("difficulty") == difficulty]
         if not filtered_bank:
             filtered_bank = list(QUESTION_BANK)
@@ -406,32 +373,22 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             "Choose the correct\nstarting letter for {animal}!"
         ]
 
-        # ────────────────────────────────────────────────────────────
-        #  CASE 1: Flicker-Free Update (Layout Cache already exists)
-        # ────────────────────────────────────────────────────────────
+        # ── CASE 1: Flicker-Free Update ──
         if hasattr(parent, "_game_layout"):
             layout = parent._game_layout
+            stop_all_sounds()
 
-            # Stop any active sounds immediately before updating the view
-            if _SND:
-                try: pygame.mixer.stop()
-                except Exception: pass
-
-            # Clean up any leftover canvas jail overlay or cry text to prevent them bleeding into the next question
             layout["canvas"].delete("jail")
             layout["canvas"].delete("cry")
 
-            # Update internal state
             layout["state"]["score"] = score
             layout["state"]["wrong"] = 0
             layout["state"]["answered"] = False
 
-            # Update question details
             q = filtered_bank[q_index % len(filtered_bank)]
             current_question = q
             cor = q["letter"]
 
-            # Choices selection
             all_l = list(set([x["letter"] for x in filtered_bank]))
             if cor not in all_l: all_l.append(cor)
             other_letters = [l for l in all_l if l != cor]
@@ -440,7 +397,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             choices = random.sample(other_letters, 3) + [cor]
             random.shuffle(choices)
 
-            # Pre-loading next question's animal image
             next_index = (q_index + 1) % len(filtered_bank)
             next_q = filtered_bank[next_index]
             if not hasattr(show_game_screen, "_image_cache"):
@@ -457,7 +413,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
 
             threading.Thread(target=preload_next_image, daemon=True).start()
 
-            # Update animal card image & fallback
             animal_img = load_animal_image(
                 q.get("image", ""), 
                 animal_name=q.get("animal", ""),
@@ -472,18 +427,14 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             )
             layout["banner_lbl"].configure(text=q["animal"])
 
-            # Update score indicators
             layout["score_var"].set(f"Score: {score}")
             layout["sb"].update(score)
 
-            # Update bubble prompt question
             template = QUESTION_PROMPTS[q_index % len(QUESTION_PROMPTS)]
             bubble_question = template.replace("{animal}", q['animal'])
             layout["robo_text"].set(bubble_question)
 
-            # Define click actions for options
             def navigate_and_stop(action_type, target_idx):
-                print(f"[Debug] navigate_and_stop in Case 1 called: action={action_type}, target={target_idx}")
                 stop_all_sounds()
                 if on_navigate:
                     score_to_pass = 0 if action_type == "home" else layout["state"]["score"]
@@ -501,7 +452,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                     layout["state"]["score"] += 1
                     layout["score_var"].set(f"Score: {layout['state']['score']}")
                     layout["sb"].update(layout["state"]["score"])
-
                     stop_all_sounds()
 
                     if btn:
@@ -585,16 +535,12 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                     pulse_state = [0]
                     def pulse():
                         try:
-                            if not correct_btn.winfo_exists():
-                                return
-                        except Exception:
-                            return
+                            if not correct_btn.winfo_exists(): return
+                        except Exception: return
                         if pulse_state[0] < 10 and not layout["state"]["answered"]:
                             color = pulse_colors[pulse_state[0] % len(pulse_colors)]
-                            try:
-                                correct_btn.configure(border_width=6, border_color=color)
-                            except Exception:
-                                return
+                            try: correct_btn.configure(border_width=6, border_color=color)
+                            except Exception: return
                             pulse_state[0] += 1
                             root.after(300, pulse)
                         else:
@@ -604,10 +550,8 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
 
             root.bind("<h>", lambda e: trigger_hint())
             root.bind("<H>", lambda e: trigger_hint())
-
             layout["hint_btn"].configure(command=trigger_hint)
 
-            # Update options buttons
             for i, b in enumerate(layout["btns"]):
                 c = LETTER_COLORS[i]
                 b.configure(text=choices[i], state="normal")
@@ -628,26 +572,20 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
 
                 b.configure(command=lambda l=choices[i], btn=b, ci=i: on_click(l, btn, ci))
 
-            # Reconfigure nav bar commands with default parameter bindings to fix late-binding bugs
             layout["back_btn"].configure(command=lambda target=q_index: navigate_and_stop("back", target - 1))
             layout["next_btn"].configure(command=lambda target=q_index: navigate_and_stop("next", target + 1))
             layout["home_btn"].configure(command=lambda: navigate_and_stop("home", 0))
             layout["end_btn"].configure(command=lambda target=q_index: navigate_and_stop("end", target))
 
-            # Update speech recognition handler variables
             def handle_spoken_letter(letter):
                 if layout["state"]["answered"]: return
                 letter = letter.upper()
-                try:
-                    if pygame.mixer.get_init():
-                        pygame.mixer.stop()
-                except Exception: pass
+                stop_all_sounds()
                 is_correct = (letter == cor)
                 def SpeakFeedback():
                     try:
                         time.sleep(0.4)
-                        if is_correct:
-                            voice.robo_say("mic_correct")
+                        if is_correct: voice.robo_say("mic_correct")
                         else:
                             feedback = f"You said {letter}. That is not correct! Try another option!"
                             voice.robo_say(None, custom_text=feedback)
@@ -675,32 +613,27 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             def run_mic_backend():
                 try:
                     captured = voice.listen_for_letter()
-                    print(f"[Debug] run_mic_backend captured in Case 1: {captured}")
                     if captured:
                         root.after(0, lambda: handle_spoken_letter(captured))
                         root.after(0, lambda: layout["mic_lbl"].configure(text=f"Heard: {captured}!"))
                         root.after(2200, reset_mic_ui)
                     else:
                         root.after(0, lambda: layout["mic_lbl"].configure(text="No sound detected"))
-                        root.after(0, reset_mic_ui) # Reset layout immediately on failure
+                        root.after(0, reset_mic_ui)
                         threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
-                except OSError as e:
-                    print(f"Mic device error: {e}")
+                except OSError:
                     root.after(0, lambda: layout["mic_lbl"].configure(text="Error: No mic found!"))
                     root.after(0, reset_mic_ui)
                     threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
                 except ValueError as e:
-                    print(f"Mic value error: {e}")
                     root.after(0, lambda: layout["mic_lbl"].configure(text=str(e)))
                     root.after(0, reset_mic_ui)
                     threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
-                except ConnectionError as e:
-                    print(f"Mic connection error: {e}")
+                except ConnectionError:
                     root.after(0, lambda: layout["mic_lbl"].configure(text="Error: No Internet!"))
                     root.after(0, reset_mic_ui)
                     threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
                 except Exception as e:
-                    print(f"Mic error: {e}")
                     root.after(0, lambda: layout["mic_lbl"].configure(text=f"Error: {str(e)}"))
                     root.after(0, reset_mic_ui)
                     threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
@@ -713,7 +646,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             def toggle_mic():
                 if not layout["mic_state"]["on"]:
                     layout["mic_state"]["on"] = True
-                    # Active recording button turns Red instead of Green to remove green colors
                     layout["mic_btn"].configure(fg_color="#FF5252", text_color="#FFFFFF", text="STOP")
                     layout["mic_lbl"].configure(text="Listening...")
                     threading.Thread(target=run_mic_backend, daemon=True).start()
@@ -721,19 +653,13 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                     reset_mic_ui()
 
             layout["mic_btn"].configure(command=toggle_mic)
-
             return parent
 
-        # ────────────────────────────────────────────────────────────
-        #  CASE 2: First Load (Construct Widgets from scratch)
-        # ────────────────────────────────────────────────────────────
+        # ── CASE 2: First Load (Construct Widgets) ──
         for w in parent.winfo_children():
             w.destroy()
 
-        # Base Canvas and Background Overlays
         jungle = JungleCanvas(root)
-
-        # Force instant render to prevent white flashes
         root.update_idletasks()
 
         parts  = Particles(jungle.canvas)
@@ -757,12 +683,10 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
         choices = random.sample(other_letters, 3) + [cor]
         random.shuffle(choices)
 
-        # ── Header HUD Configuration (Background changed to transparent to remove solid colors) ──
         hdr = ctk.CTkFrame(root, fg_color="transparent", bg_color="transparent", border_color="#FFD600", border_width=3, corner_radius=16, width=SCREEN_W-80, height=80)
         hdr.place(x=40, y=15)
         hdr.pack_propagate(False)
 
-        # Scale Up brand logo asset to prominent 150x80 size
         logo_path = os.path.join(UI_DIR, "logo_main.png")
         if os.path.exists(logo_path):
             try:
@@ -783,13 +707,10 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
         score_var = ctk.StringVar(value=f"Score: {score}")
         ctk.CTkLabel(hdr, textvariable=score_var, font=load_font(24, "bold"), text_color="#FFD600", fg_color="transparent").place(x=SCREEN_W-260, y=22)
 
-        # ── Column 1: Animal Card Hub ──
-        # Shadow frame color changed from dark green to dark charcoal shadow
         ctk.CTkFrame(root, fg_color="#090909", bg_color="transparent", corner_radius=26, width=COL1_W, height=CARD_H).place(x=COL1_X+6, y=CARD_Y+6)
         card = ctk.CTkFrame(root, fg_color="#FFFFFF", bg_color="transparent", corner_radius=24, border_color="#FFD600", border_width=5, width=COL1_W, height=CARD_H)
         card.place(x=COL1_X, y=CARD_Y)
 
-        # Search for image using path from question data
         animal_img = load_animal_image(
             q.get("image", ""), 
             animal_name=q.get("animal", ""),
@@ -806,25 +727,19 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
         )
         animal_lbl.place(relx=0.5, y=15, anchor="n")
 
-        # Card banner uses dark brown outline but no bright green backgrounds
         banner = ctk.CTkFrame(card, fg_color="#8B4513", bg_color="transparent", corner_radius=14, border_color="#FFD600", border_width=2, width=270, height=50)
         banner.place(relx=0.5, y=295, anchor="n")
         banner_lbl = ctk.CTkLabel(banner, text=q['animal'], font=load_font(24,"bold"), text_color="#FFFFFF", fg_color="transparent")
         banner_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Prompt Speech Bubble Frame
         template = QUESTION_PROMPTS[q_index % len(QUESTION_PROMPTS)]
         bubble_question = template.replace("{animal}", q['animal'])
 
         bubble = ctk.CTkFrame(root, fg_color="#FFFDE7", bg_color="transparent", corner_radius=18, border_color="#FFD54F", border_width=3, width=340, height=80)
         bubble.place(relx=0.5, y=100, anchor="n")
         robo_text = ctk.StringVar(value=bubble_question)
-        # Changed text color from green to dark charcoal
         ctk.CTkLabel(bubble, textvariable=robo_text, font=load_font(18, "bold"), text_color="#333333", wraplength=320, justify="center").place(relx=0.5, rely=0.5, anchor="center")
 
-
-
-        # ── Column 3: Matrix Choice Letter Buttons ──
         btn_positions = [
             (COL3_X,     140), (COL3_X+140, 140),
             (COL3_X,     275), (COL3_X+140, 275),
@@ -838,7 +753,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                     except Exception: pass
 
         def navigate_and_stop(action_type, target_idx):
-            print(f"[Debug] navigate_and_stop in Case 2 called: action={action_type}, target={target_idx}")
             stop_all_sounds()
             if on_navigate:
                 score_to_pass = 0 if action_type == "home" else state["score"]
@@ -856,7 +770,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                 state["score"] += 1
                 score_var.set(f"Score: {state['score']}")
                 sb.update(state["score"])
-
                 stop_all_sounds()
 
                 if btn:
@@ -880,7 +793,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                 ))
             else:
                 state["wrong"] += 1
-
                 if btn:
                     if btn.cget("image"):
                         btn.configure(image=None)
@@ -919,20 +831,16 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                 jungle.canvas.create_text(COL1_X + COL1_W//2, CARD_Y + CARD_H//2 - 20, text="Oops!", font=("Arial", 60, "bold"), tags="cry", fill="#D32F2F")
                 jungle.canvas.after(1500, lambda: jungle.canvas.delete("cry"))
 
-        # Helper to add floating effect on hover
         def make_btn_float(btn, orig_x, orig_y):
             def on_enter(event):
-                if btn.cget("state") == "normal":
-                    btn.place(x=orig_x, y=orig_y - 8)
+                if btn.cget("state") == "normal": btn.place(x=orig_x, y=orig_y - 8)
             def on_leave(event):
                 btn.place(x=orig_x, y=orig_y)
             btn.bind("<Enter>", on_enter)
             btn.bind("<Leave>", on_leave)
 
-        # Load button background images
         for i, (x, y) in enumerate(btn_positions):
             c = LETTER_COLORS[i]
-
             btn_img = None
             p_img = os.path.join(BASE_DIR, "assets", "images", "ui", f"btn_jungle_{i+1}.png")
             if not os.path.exists(p_img):
@@ -942,30 +850,24 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                 try:
                     pil_img = Image.open(p_img).convert("RGBA").resize((BTN_W, BTN_H), Image.Resampling.LANCZOS)
                     btn_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(BTN_W, BTN_H))
-                except Exception as ex:
-                    print(f"Error loading jungle button background: {ex}")
+                except Exception: pass
 
-            # Hover color changed from green to dark slate
             if btn_img:
                 b = ctk.CTkButton(root, text=choices[i], image=btn_img, font=load_font(52, "bold"), width=BTN_W, height=BTN_H,
-                    corner_radius=22, fg_color="transparent", hover_color="#263238", text_color="#FFFFFF", border_width=0,
-                    bg_color="transparent")
+                    corner_radius=22, fg_color="transparent", hover_color="#263238", text_color="#FFFFFF", border_width=0, bg_color="transparent")
             else:
                 b = ctk.CTkButton(root, text=choices[i], font=load_font(52, "bold"), width=BTN_W, height=BTN_H,
-                    corner_radius=22, fg_color=c["fg"], hover_color=c["hover"], text_color="#FFFFFF", border_color="#000000", border_width=3,
-                    bg_color="transparent")
+                    corner_radius=22, fg_color=c["fg"], hover_color=c["hover"], text_color="#FFFFFF", border_color="#000000", border_width=3, bg_color="transparent")
 
             b.place(x=x, y=y, anchor="nw")
             b.configure(command=lambda l=choices[i], btn=b, ci=i: on_click(l, btn, ci))
             make_btn_float(b, x, y)
             btns.append(b)
 
-        # Hint Button trigger logic
         def trigger_hint():
             if state["answered"]: return
             threading.Thread(target=lambda: voice.robo_say("hint", letter=cor, animal=q["animal"]), daemon=True).start()
 
-            # Find correct button
             correct_btn = None
             for idx, b in enumerate(btns):
                 if b.cget("text") == cor:
@@ -981,16 +883,12 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
 
                 def pulse():
                     try:
-                        if not correct_btn.winfo_exists():
-                            return
-                    except Exception:
-                        return
+                        if not correct_btn.winfo_exists(): return
+                    except Exception: return
                     if pulse_state[0] < 10 and not state["answered"]:
                         color = pulse_colors[pulse_state[0] % len(pulse_colors)]
-                        try:
-                            correct_btn.configure(border_width=6, border_color=color)
-                        except Exception:
-                            return
+                        try: correct_btn.configure(border_width=6, border_color=color)
+                        except Exception: return
                         pulse_state[0] += 1
                         root.after(300, pulse)
                     else:
@@ -998,27 +896,19 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                         except Exception: pass
                 pulse()
 
-        # Bind 'h' / 'H' keys for hint trigger
         root.bind("<h>", lambda e: trigger_hint())
         root.bind("<H>", lambda e: trigger_hint())
 
-        # ── Speech Recognition Handler ──
         def handle_spoken_letter(letter):
             if state["answered"]: return
             letter = letter.upper()
-
-            try:
-                if pygame.mixer.get_init():
-                    pygame.mixer.stop()
-            except Exception: pass
-
+            stop_all_sounds()
             is_correct = (letter == cor)
 
             def SpeakFeedback():
                 try:
                     time.sleep(0.4)
-                    if is_correct:
-                        voice.robo_say("mic_correct")
+                    if is_correct: voice.robo_say("mic_correct")
                     else:
                         feedback = f"You said {letter}. That is not correct! Try another option!"
                         voice.robo_say(None, custom_text=feedback)
@@ -1045,11 +935,9 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                 else:
                     on_click(letter, None, -1, skip_voice=True)
 
-        # ── Concurrency-Isolated Microphone Input Module ──
         mic_state = {"on": False}
         mic_btn = ctk.CTkButton(root, text="LISTEN", width=65, height=65, corner_radius=32,
-            font=load_font(14,"bold"), fg_color="#FFF9C4", hover_color="#FFF176", text_color="#E65100", border_color="#FFD54F", border_width=3,
-            bg_color="transparent")
+            font=load_font(14,"bold"), fg_color="#FFF9C4", hover_color="#FFF176", text_color="#E65100", border_color="#FFD54F", border_width=3, bg_color="transparent")
         mic_btn.place(x=40, y=SCREEN_H-30, anchor="sw")
 
         mic_lbl = ctk.CTkLabel(root, text="Say the letter!", font=load_font(14,"bold"), text_color="#FFFDE7", fg_color="transparent", bg_color="transparent")
@@ -1058,32 +946,27 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
         def run_mic_backend():
             try:
                 captured = voice.listen_for_letter()
-                print(f"[Debug] run_mic_backend captured in Case 2: {captured}")
                 if captured:
                     root.after(0, lambda: handle_spoken_letter(captured))
                     root.after(0, lambda: mic_lbl.configure(text=f"Heard: {captured}!"))
                     root.after(2200, reset_mic_ui)
                 else:
                     root.after(0, lambda: mic_lbl.configure(text="No sound detected"))
-                    root.after(0, reset_mic_ui) # Reset layout immediately on failure
+                    root.after(0, reset_mic_ui)
                     threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
-            except OSError as e:
-                print(f"Mic device error: {e}")
+            except OSError:
                 root.after(0, lambda: mic_lbl.configure(text="Error: No mic found!"))
                 root.after(0, reset_mic_ui)
                 threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
             except ValueError as e:
-                print(f"Mic value error: {e}")
                 root.after(0, lambda: mic_lbl.configure(text=str(e)))
                 root.after(0, reset_mic_ui)
                 threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
-            except ConnectionError as e:
-                print(f"Mic connection error: {e}")
+            except ConnectionError:
                 root.after(0, lambda: mic_lbl.configure(text="Error: No Internet!"))
                 root.after(0, reset_mic_ui)
                 threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
             except Exception as e:
-                print(f"Mic error: {e}")
                 root.after(0, lambda: mic_lbl.configure(text=f"Error: {str(e)}"))
                 root.after(0, reset_mic_ui)
                 threading.Thread(target=lambda: voice.robo_say("mic_fail"), daemon=True).start()
@@ -1096,7 +979,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
         def toggle_mic():
             if not mic_state["on"]:
                 mic_state["on"] = True
-                # Active recording turns Red instead of Green to remove green background colors
                 mic_btn.configure(fg_color="#FF5252", text_color="#FFFFFF", text="STOP")
                 mic_lbl.configure(text="Listening...")
                 threading.Thread(target=run_mic_backend, daemon=True).start()
@@ -1105,12 +987,10 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
 
         mic_btn.configure(command=toggle_mic)
 
-        # ── Global Navigation Control Bar System (Background changed to transparent to remove solid colors) ──
         nav_bar = ctk.CTkFrame(root, fg_color="transparent", bg_color="transparent", border_color="#FFD600", border_width=2, corner_radius=14, height=65, width=640)
         nav_bar.place(relx=0.5, y=SCREEN_H-30, anchor="s")
         nav_bar.pack_propagate(False)
 
-        # Buttons color changed from green to gold/orange to match theme and fit beautifully
         back_btn = ctk.CTkButton(nav_bar, text="BACK", font=load_font(16, "bold"), fg_color="#FFB300", hover_color="#FFA000", text_color="#000000", width=110, height=40, corner_radius=10, bg_color="transparent",
                       command=lambda target=q_index: navigate_and_stop("back", target - 1))
         back_btn.place(x=15, y=12)
@@ -1119,9 +999,7 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                       command=lambda target=q_index: navigate_and_stop("next", target + 1))
         next_btn.place(x=140, y=12)
 
-        # HINT button placed directly inside the main navigation card between NEXT and HOME (eliminating overlap)
-        hint_btn = ctk.CTkButton(nav_bar, text="HINT", font=load_font(16, "bold"), fg_color="#FF9800", hover_color="#E65100", width=110, height=40, corner_radius=10, bg_color="transparent",
-                      command=trigger_hint)
+        hint_btn = ctk.CTkButton(nav_bar, text="HINT", font=load_font(16, "bold"), fg_color="#FF9800", hover_color="#E65100", width=110, height=40, corner_radius=10, bg_color="transparent", command=trigger_hint)
         hint_btn.place(x=265, y=12)
 
         home_btn = ctk.CTkButton(nav_bar, text="HOME", font=load_font(16, "bold"), fg_color="#FFB300", hover_color="#FFA000", text_color="#000000", width=110, height=40, corner_radius=10, bg_color="transparent",
@@ -1132,9 +1010,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
                       command=lambda target=q_index: navigate_and_stop("end", target))
         end_btn.place(x=515, y=12)
 
-        # Countdown timer completely removed as requested
-
-        # Save references to widgets for subsequent updates
         parent._game_layout = {
             "state": state,
             "canvas": jungle.canvas,
@@ -1155,7 +1030,6 @@ def show_game_screen(parent, player_name="Explorer", score=0, q_index=0, on_answ
             "mic_lbl": mic_lbl,
             "mic_state": mic_state
         }
-
         return root
 
     except Exception as e:
@@ -1170,10 +1044,8 @@ if __name__ == "__main__":
     app.geometry(f"{SCREEN_W}x{SCREEN_H}")
     app.resizable(False, False)
 
-    def _ans(correct, new_score, next_index):
-        pass
-    def _nav(action, score, idx):
-        print(f"Nav action: {action} target idx: {idx}")
+    def _ans(correct, new_score, next_index): pass
+    def _nav(action, score, idx): print(f"Nav action: {action} target idx: {idx}")
 
-    show_game_screen(app, "Sajjad", 0, 0, _ans, on_navigate=_nav)
+    show_game_screen(app, "Explorer", 0, 0, _ans, on_navigate=_nav)
     app.mainloop()
