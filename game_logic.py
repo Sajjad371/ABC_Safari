@@ -59,7 +59,7 @@ def play_animal_sound(letter):
     if q and "sound" in q:
         try:
             pygame.mixer.Sound(q["sound"]).play()
-            print(f"🔊 Playing safari sound track: {q['sound']}")
+            print(f"Playing safari sound track: {q['sound']}")
         except Exception:
             # Defensive programming: keeps game running if asset is missing
             print(f"Fallback System Log: Audio asset played for letter {letter}")

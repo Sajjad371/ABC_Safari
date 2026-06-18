@@ -156,12 +156,20 @@ class VoiceEngine:
         # Volume: maximum clarity
         engine.setProperty("volume", 1.0)
 
-        # Voice: prefer a female voice if available — tends to sound friendlier
+        # Voice: prefer Microsoft David or another male voice for a bold, powerful feel
         voices = engine.getProperty("voices")
+        selected_voice_id = None
         for voice in voices:
-            if "female" in voice.name.lower() or "zira" in voice.id.lower():
-                engine.setProperty("voice", voice.id)
-                break  # stop after finding the first female voice
+            if "david" in voice.name.lower():
+                selected_voice_id = voice.id
+                break
+        if not selected_voice_id:
+            for voice in voices:
+                if "male" in voice.name.lower() or "zira" not in voice.name.lower():
+                    selected_voice_id = voice.id
+                    break
+        if selected_voice_id:
+            engine.setProperty("voice", selected_voice_id)
 
     def _check_microphone(self) -> bool:
         """
@@ -189,7 +197,7 @@ class VoiceEngine:
         ----------
         prompt_ui_callback : callable, optional
             A function from Member 2's UI code that updates a label like
-            "Robo is listening... 🎤". Called immediately before listening
+            "Robo is listening...". Called immediately before listening
             starts so the child gets visual feedback right away.
 
         Returns
@@ -216,7 +224,7 @@ class VoiceEngine:
 
         # Notify the UI that listening is about to begin
         if prompt_ui_callback:
-            prompt_ui_callback("🎤  Robo is listening...")
+            prompt_ui_callback("Robo is listening...")
 
         try:
             with sr.Microphone() as mic_source:
@@ -373,7 +381,7 @@ class VoiceEngine:
     def speak_welcome(self):
         """Robo greets the child at the welcome screen."""
         self.speak(
-            f"Hello {self.child_name}! I am Robo! "
+            f"Hello {self.child_name}! I am your Safari Guide! "
             "Let's explore the jungle and learn letters together!"
         )
 
@@ -402,7 +410,7 @@ class VoiceEngine:
         phrases = [
             f"YES! {letter} — well done, {{name}}! You are amazing!",
             f"Correct! {{name}}, you are so clever! {letter} is right!",
-            f"Brilliant, {{name}}! {letter} — Robo is SO proud of you!",
+            f"Brilliant, {{name}}! {letter} — your Safari Guide is SO proud of you!",
             f"Fantastic! {letter} is the right answer! Keep going, {{name}}!",
         ]
         # Rotate through praise phrases to keep the child engaged
@@ -452,7 +460,7 @@ class VoiceEngine:
         stars           : int   Number of stars earned (0–5)
         struggled_letters : list  e.g. ["B", "D", "F"] from mistake_count
         """
-        star_phrase = "⭐" * stars if stars > 0 else ""
+        star_phrase = "*" * stars if stars > 0 else ""
         end_text    = (
             f"Amazing work, {{name}}! You earned {stars} stars today! "
             f"{star_phrase} "
@@ -464,7 +472,7 @@ class VoiceEngine:
                 "You are getting better every day!"
             )
         else:
-            end_text += "You got every letter right! Robo is so happy!"
+            end_text += "You got every letter right! your Safari Guide is so happy!"
 
         self.speak(end_text)
 
@@ -472,7 +480,7 @@ class VoiceEngine:
         """Robo reads the instruction screen aloud for pre-readers."""
         self.speak(
             "Here is how to play! "
-            "Robo will show you a jungle animal. "
+            "Your Safari Guide will show you a jungle animal. "
             "Tap the letter the animal starts with, "
             "or say the letter out loud into the microphone. "
             "Ready? Let's go!"
@@ -563,7 +571,7 @@ def on_mic_button_pressed(voice_engine: VoiceEngine,
         # Step 2: If nothing heard, update label and return quietly
         if spoken is None:
             if update_label_callback:
-                update_label_callback({"text": "Didn't catch that — try again! 🎤"})
+                update_label_callback({"text": "Didn't catch that — try again!"})
             return
 
         # Step 3: Match the spoken word against the correct letter

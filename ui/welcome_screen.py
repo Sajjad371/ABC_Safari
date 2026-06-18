@@ -42,6 +42,7 @@ def _load_pil(filename, dirs):
     return None
 
 
+
 # ── Overlay canvas for animated elements (vines, sun, butterflies, etc.) ──
 class JungleOverlay:
     """Draws animated overlays on a tkinter Canvas placed above the bg label."""
@@ -73,7 +74,7 @@ class JungleOverlay:
                 self.logo_photo = ImageTk.PhotoImage(logo_pil)
             except Exception: pass
 
-        # 🦋 REAL BUTTERFLY ANIMATION SYSTEM INITIALIZATION 🦋
+        # REAL BUTTERFLY ANIMATION SYSTEM INITIALIZATION
         self.bf_photos = []  # Holds hard references to protect from garbage collection
         self._load_butterfly_assets()
         
@@ -99,108 +100,95 @@ class JungleOverlay:
                 self.bf_photos.append(ImageTk.PhotoImage(resized))
 
     def _animate(self):
-        self.t += 0.04
-        self.canvas.delete("a")
-        W, H = SCREEN_W, SCREEN_H
-
-        # Draw Background
-        if self.bg_photo:
-            self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw", tags="a")
-
-        # Draw Logo directly on Canvas (completely transparent background, no green borders)
-        if self.logo_photo:
-            self.canvas.create_image(140, 75, image=self.logo_photo, anchor="center", tags="a")
-        else:
-            self.canvas.create_text(140, 75, text="🌿  ABC Safari  🌿", font=_font(32, "bold"), fill="#3E2723", tags="a")
-
-        # 1. Vines Animation
-        for vx in range(80, W, 200):
-            ofs = 16 * math.sin(self.t + vx / 200)
-            self.canvas.create_line(
-                vx + ofs, 0, vx + 13 + ofs, 75, vx + ofs, 150,
-                vx + 13 + ofs, 225, vx + ofs, 300,
-                fill="#1B5E20", width=7, smooth=True, tags="a")
-            for ly in [75, 150, 225]:
-                self.canvas.create_oval(
-                    vx + ofs - 13, ly - 8, vx + ofs + 13, ly + 8,
-                    fill="#388E3C", outline="", tags="a")
-
-        # 2. Sun Animation (moved to the right side of the screen)
-        sun_x = W - 160
-        sy = 55 + 5 * math.sin(self.t * 0.6)
-        self.canvas.create_oval(sun_x - 28, sy - 28, sun_x + 28, sy + 28,
-                                fill="#FFD54F", outline="#FFC107", width=3, tags="a")
-        for ang in range(0, 360, 45):
-            r = math.radians(ang)
-            self.canvas.create_line(
-                sun_x + 34 * math.cos(r), sy + 34 * math.sin(r),
-                sun_x + 48 * math.cos(r), sy + 48 * math.sin(r),
-                fill="#FFC107", width=3, tags="a")
-
-        # 3. Swinging monkey emoji decoration (DELETED)
-
-        # 4. 🦋 REAL BUTTERFLY FLIGHT ENGINE (Flies around from here to there!) 🦋
-        for b in self.flock:
-            # Apply a random, jittery force to mimic real, organic insect motion
-            b["vx"] += random.uniform(-0.3, 0.3)
-            b["vy"] += random.uniform(-0.3, 0.3)
-            
-            # Speed control clamping
-            b["vx"] = max(-3.5, min(3.5, b["vx"]))
-            b["vy"] = max(-2.5, min(2.5, b["vy"]))
-            
-            # Apply physics updates
-            b["x"] += b["vx"]
-            b["y"] += b["vy"]
-            
-            # Screen boundary wrap-around safety
-            if b["x"] < -60: b["x"] = W + 60
-            if b["x"] > W + 60: b["x"] = -60
-            if b["y"] < -60: b["y"] = H + 60
-            if b["y"] > H + 60: b["y"] = -60
-            
-            # Alternate flapping frame rate steps
-            if int(self.t * 10) % 3 == 0:
-                b["frame"] = (b["frame"] + 1) % 2
-
-            # Render image if assets are present, otherwise execute safe beautiful emoji fallback
-            if len(self.bf_photos) >= 2:
-                self.canvas.create_image(b["x"], b["y"], image=self.bf_photos[b["frame"]], tags="a")
-            else:
-                self.canvas.create_text(b["x"], b["y"], text="🦋", font=("Arial", 32), tags="a")
-
-        # 5. Parrot Animation
-        px = 55 + 7 * math.sin(self.t * 0.5)
-        py = 290 + 9 * math.cos(self.t * 0.8)
-        self.canvas.create_text(px, py, text="\U0001F99C",
-                                font=("Arial", 42), tags="a")
-
-        # 6. Waterfall Animation (DELETED from welcome screen)
-
-        # 7. Falling Leaves Animation
-        for i in range(5):
-            lx = (190 + i * 220 + int(28 * math.sin(self.t / 3 + i))) % W
-            ly = H - 88 + 22 * math.sin(self.t / 2 + i * 1.3)
-            self.canvas.create_text(lx, ly, text="\U0001F343",
-                                    font=("Arial", 24), tags="a")
-
-        self.parent.after(42, self._animate)
-
-
-class FloatRobo:
-    def __init__(self, parent, lbl):
-        self.parent = parent
-        self.lbl = lbl
-        self.s = 0
-        self._go()
-
-    def _go(self):
         try:
-            oy = int(16 * math.sin(self.s / 52))
-            self.lbl.place(relx=0.73,
-                           rely=0.53 + oy / SCREEN_H, anchor="center")
-            self.s += 1
-            self.parent.after(35, self._go)
+            if not self.canvas.winfo_exists():
+                return
+            self.t += 0.04
+            self.canvas.delete("a")
+            W, H = SCREEN_W, SCREEN_H
+
+            # Draw Background
+            if self.bg_photo:
+                self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw", tags="a")
+
+            # Draw Logo directly on Canvas (completely transparent background, no green borders)
+            if self.logo_photo:
+                self.canvas.create_image(140, 75, image=self.logo_photo, anchor="center", tags="a")
+            else:
+                self.canvas.create_text(140, 75, text="ABC Safari", font=_font(32, "bold"), fill="#3E2723", tags="a")
+
+            # 1. Vines Animation
+            for vx in range(80, W, 200):
+                ofs = 16 * math.sin(self.t + vx / 200)
+                self.canvas.create_line(
+                    vx + ofs, 0, vx + 13 + ofs, 75, vx + ofs, 150,
+                    vx + 13 + ofs, 225, vx + ofs, 300,
+                    fill="#1B5E20", width=7, smooth=True, tags="a")
+                for ly in [75, 150, 225]:
+                    self.canvas.create_oval(
+                        vx + ofs - 13, ly - 8, vx + ofs + 13, ly + 8,
+                        fill="#388E3C", outline="", tags="a")
+
+            # 2. Sun Animation (moved to the right side of the screen)
+            sun_x = W - 160
+            sy = 55 + 5 * math.sin(self.t * 0.6)
+            self.canvas.create_oval(sun_x - 28, sy - 28, sun_x + 28, sy + 28,
+                                    fill="#FFD54F", outline="#FFC107", width=3, tags="a")
+            for ang in range(0, 360, 45):
+                r = math.radians(ang)
+                self.canvas.create_line(
+                    sun_x + 34 * math.cos(r), sy + 34 * math.sin(r),
+                    sun_x + 48 * math.cos(r), sy + 48 * math.sin(r),
+                    fill="#FFC107", width=3, tags="a")
+
+            # 3. Swinging monkey emoji decoration (DELETED)
+
+            # 4. REAL BUTTERFLY FLIGHT ENGINE (Flies around from here to there!)
+            for b in self.flock:
+                # Apply a random, jittery force to mimic real, organic insect motion
+                b["vx"] += random.uniform(-0.3, 0.3)
+                b["vy"] += random.uniform(-0.3, 0.3)
+                
+                # Speed control clamping
+                b["vx"] = max(-3.5, min(3.5, b["vx"]))
+                b["vy"] = max(-2.5, min(2.5, b["vy"]))
+                
+                # Apply physics updates
+                b["x"] += b["vx"]
+                b["y"] += b["vy"]
+                
+                # Screen boundary wrap-around safety
+                if b["x"] < -60: b["x"] = W + 60
+                if b["x"] > W + 60: b["x"] = -60
+                if b["y"] < -60: b["y"] = H + 60
+                if b["y"] > H + 60: b["y"] = -60
+                
+                # Alternate flapping frame rate steps
+                if int(self.t * 10) % 3 == 0:
+                    b["frame"] = (b["frame"] + 1) % 2
+
+                # Render image if assets are present, otherwise execute safe beautiful emoji fallback
+                if len(self.bf_photos) >= 2:
+                    self.canvas.create_image(b["x"], b["y"], image=self.bf_photos[b["frame"]], tags="a")
+                else:
+                    self.canvas.create_text(b["x"], b["y"], text="🦋", font=("Segoe UI Emoji", 32), tags="a")
+
+            # 5. Parrot Animation
+            px = 55 + 7 * math.sin(self.t * 0.5)
+            py = 290 + 9 * math.cos(self.t * 0.8)
+            self.canvas.create_text(px, py, text="",
+                                    font=("Arial", 42), tags="a")
+
+            # 6. Waterfall Animation (DELETED from welcome screen)
+
+            # 7. Falling Leaves Animation
+            for i in range(5):
+                lx = (190 + i * 220 + int(28 * math.sin(self.t / 3 + i))) % W
+                ly = H - 88 + 22 * math.sin(self.t / 2 + i * 1.3)
+                self.canvas.create_text(lx, ly, text="",
+                                        font=("Arial", 24), tags="a")
+
+            self.parent.after(42, self._animate)
         except Exception:
             pass
 
@@ -245,26 +233,31 @@ class StarBurst:
         self._tick()
 
     def _tick(self):
-        if not self.running:
-            return
-        alive = []
-        for p in self.pts:
-            p["x"] += p["vx"]
-            p["y"] += p["vy"]
-            p["vy"] += 0.25
-            p["life"] -= 1
-            if p["life"] > 0:
-                s = p["size"]
-                self.canvas.create_oval(
-                    p["x"] - s, p["y"] - s, p["x"] + s, p["y"] + s,
-                    fill=p["color"], outline="", tags="burst")
-                alive.append(p)
-        self.pts = alive
-        if alive:
-            self.canvas.after(30, lambda: (
-                self.canvas.delete("burst"), self._tick()))
-        else:
-            self.running = False
+        try:
+            if not self.canvas.winfo_exists():
+                return
+            if not self.running:
+                return
+            alive = []
+            for p in self.pts:
+                p["x"] += p["vx"]
+                p["y"] += p["vy"]
+                p["vy"] += 0.25
+                p["life"] -= 1
+                if p["life"] > 0:
+                    s = p["size"]
+                    self.canvas.create_oval(
+                        p["x"] - s, p["y"] - s, p["x"] + s, p["y"] + s,
+                        fill=p["color"], outline="", tags="burst")
+                    alive.append(p)
+            self.pts = alive
+            if alive:
+                self.canvas.after(30, lambda: (
+                    self.canvas.delete("burst"), self._tick()))
+            else:
+                self.running = False
+        except Exception:
+            pass
 
 
 # ────────────────────────────────────────────────────────────
@@ -291,7 +284,7 @@ def show_welcome_screen(root, on_start=None, welcome_text=None):
     card_frame.pack_propagate(False)
     
     ctk.CTkLabel(
-        card_frame, text="👋  Welcome, Explorer!",
+        card_frame, text="Welcome, Explorer!",
         font=_font(22, "bold"), text_color="#3E2723"
     ).pack(pady=(10, 2))
 
@@ -333,7 +326,7 @@ def show_welcome_screen(root, on_start=None, welcome_text=None):
             on_start(n, diff)
 
     btn = ctk.CTkButton(
-        card_frame, text="▶  START ADVENTURE",
+        card_frame, text="START ADVENTURE",
         font=_font(18, "bold"), width=240, height=38,
         corner_radius=18, fg_color="#FF9800",
         hover_color="#E65100", text_color="#FFFFFF",
@@ -350,7 +343,7 @@ def show_welcome_screen(root, on_start=None, welcome_text=None):
     bubble.place(relx=0.5, y=585, anchor="n")
     
     if not welcome_text:
-        welcome_text = "Hi! 🌴  I'm Robo! Let's learn the alphabet!"
+        welcome_text = "Welcome to ABC Safari! Let's learn the alphabet!"
     
     full_bubble_text = f"{welcome_text}\nType your name and press START!"
     

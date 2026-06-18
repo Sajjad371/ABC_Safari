@@ -6,6 +6,15 @@ File: voice.py
 
 import os, threading, time, random, urllib.request
 
+_stop_event = threading.Event()
+
+def stop_all_voice():
+    """Call this IMMEDIATELY when any screen changes 
+    or any button is clicked."""
+    _stop_event.set()
+    time.sleep(0.05)
+    _stop_event.clear()
+
 def _has_internet():
     try:
         urllib.request.urlopen("https://www.google.com", timeout=2)
@@ -31,7 +40,7 @@ _voice_lock = threading.Lock()
 
 # Strictly set to the onboarding instruction text specified
 WELCOME_PHRASES = [
-    "Hi! Welcome to Safari Jungle Game. Nice to have you! Write your name and choose your difficulty level to start the game."
+    "Welcome to ABC Safari! Write your name and choose a difficulty to start!"
 ]
 
 GAME_START_PHRASES = [
@@ -89,7 +98,7 @@ HINT_PHRASES = [
 ]
 
 ROBO_LINES = {
-    "welcome":          "Hi! Welcome to Safari Jungle Game. Nice to have you! Write your name and choose your difficulty level to start the game.",
+    "welcome":          "Welcome to ABC Safari! Write your name and choose a difficulty to start!",
     "ask_name":         "What is your name, explorer?",
     "game_start":       "Let us find some animals, {name}! Are you ready?",
     "question":         "What letter does this animal start with?",
@@ -171,22 +180,53 @@ def robo_speak_sync(text):
             voices = engine.getProperty('voices')
             selected_voice_id = None
             
-            # Explicitly find microsoft david or male voice
+            # Explicitly find Microsoft David voice or any male voice
             for v in voices:
-                if "david" in v.name.lower() or "male" in str(v.gender).lower():
+                if "david" in v.name.lower():
                     selected_voice_id = v.id
                     break
-            if not selected_voice_id and len(voices) > 0:
-                selected_voice_id = voices[0].id
-
+            if not selected_voice_id:
+                for v in voices:
+                    if "male" in v.name.lower() or "zira" not in v.name.lower():
+                        selected_voice_id = v.id
+                        break
             if selected_voice_id:
                 engine.setProperty('voice', selected_voice_id)
             
-            engine.setProperty("rate", 150) # perfect scannable speed for kids
+            engine.setProperty("rate", 155) # loud, clear, bold male voice
             engine.setProperty("volume", 1.0) # force volume to 1.0 (loudest)
-            engine.say(text)
-            engine.runAndWait()
-            engine.stop()
+            
+            if _stop_event.is_set():
+                return
+            
+            # Start background thread to check stop event every 0.1s
+            stop_check = False
+            def check_stop_loop():
+                while not stop_check:
+                    if _stop_event.is_set():
+                        try:
+                            engine.stop()
+                        except Exception:
+                            pass
+                        break
+                    time.sleep(0.1)
+            
+            t = threading.Thread(target=check_stop_loop, daemon=True)
+            t.start()
+            
+            try:
+                engine.say(text)
+                engine.runAndWait()
+            finally:
+                stop_check = True
+                t.join(timeout=0.2)
+            
+            # Wrap it after runAndWait to stop immediately if event is set
+            if _stop_event.is_set():
+                try:
+                    engine.stop()
+                except Exception:
+                    pass
         except Exception as e:
             print(f"Voice pipeline error encounter: {e}")
 
@@ -194,6 +234,7 @@ def get_random_welcome():
     return random.choice(WELCOME_PHRASES)
 
 def robo_say(line_key, name="", letter="", animal="", custom_text=None):
+    stop_all_voice()   # stop old voice FIRST
     if custom_text:
         text = custom_text
     else:
@@ -220,11 +261,29 @@ def robo_say(line_key, name="", letter="", animal="", custom_text=None):
     
     filled_text = text.replace("{name}", str(name)).replace("{letter}", str(letter)).replace("{animal}", str(animal))
     print(f"[Robo Speech Out]: {filled_text}")
-    robo_speak_sync(filled_text)
+    
+    # then start NEW thread for speaking
+    threading.Thread(
+        target=robo_speak_sync, 
+        args=(filled_text,), 
+        daemon=True).start()
 
-def robo_say_correct(name="", count=1):
-    base_phrase = random.choice(CORRECT_PHRASES)
-    filled_text = base_phrase.replace("{name}", str(name))
+CORRECT_ANIMAL_PHRASES = [
+    "That's right! It's a {animal}!",
+    "Correct! That is a {animal}!",
+    "Great job! You found the {animal}!",
+    "Awesome! That's the {animal}!",
+    "Perfect! It is indeed a {animal}!"
+]
+
+def robo_say_correct(name="", count=1, animal=""):
+    if animal:
+        time.sleep(1.5)
+        base_phrase = random.choice(CORRECT_ANIMAL_PHRASES)
+        filled_text = base_phrase.replace("{animal}", str(animal))
+    else:
+        base_phrase = random.choice(CORRECT_PHRASES)
+        filled_text = base_phrase.replace("{name}", str(name))
     print(f"[Robo Speech Out]: {filled_text}")
     robo_speak_sync(filled_text)
 
@@ -305,3 +364,31 @@ def listen_for_letter(timeout=3):
     except sr.RequestError:
         raise ConnectionError("Google Speech API offline. Check internet")
     return None
+
+def stop_voice():
+    stop_all_voice()
+
+def robo_say_animal(animal_name):
+    """Speaks: 'Correct! {animal_name}!' followed by a praise."""
+    stop_all_voice()
+    text = f"Correct! {animal_name}!"
+    print(f"[Robo Speech Out]: {text}")
+    threading.Thread(target=robo_speak_sync, args=(text,), daemon=True).start()
+
+def play_animal_sound(animal_name):
+    """Play cute animal sound"""
+    path = f"assets/sounds/animals/{animal_name.lower()}.wav"
+    try:
+        import pygame
+        sound = pygame.mixer.Sound(path)
+        sound.play()
+    except Exception as e:
+        print(f"Sound error: {e}")
+
+def stop_all_sounds():
+    """Stop all sounds immediately"""
+    try:
+        import pygame
+        pygame.mixer.stop()
+    except:
+        pass

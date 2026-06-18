@@ -40,7 +40,12 @@ class ABCSafariApp(ctk.CTk):
         self.launch_welcome_view()
 
     def launch_welcome_view(self):
-        welcome_msg = voice.get_random_welcome() if voice else "Hi! Welcome to Safari Jungle Game. Nice to have you! Write your name and choose your difficulty level to start the game."
+        try:
+            import voice
+            voice.stop_voice()
+        except Exception:
+            pass
+        welcome_msg = voice.get_random_welcome() if voice else "Welcome to ABC Safari! Type your name, pick difficulty, and click START!"
         show_welcome_screen(self, on_start=self._handle_onboarding_trigger, welcome_text=welcome_msg)
         self.update_idletasks()
         self.update()
@@ -75,6 +80,11 @@ class ABCSafariApp(ctk.CTk):
         self.launch_game_view()
 
     def launch_game_view(self):
+        try:
+            import voice
+            voice.stop_voice()
+        except Exception:
+            pass
         # Integrated central routing loop for Back, Next, Home, and End operations
         def handle_navigation_routing(action_type, current_score, absolute_target_index):
             print(f"[Debug] handle_navigation_routing: action={action_type}, score={current_score}, target={absolute_target_index}")
@@ -115,6 +125,11 @@ class ABCSafariApp(ctk.CTk):
         )
 
     def launch_score_view(self):
+        try:
+            import voice
+            voice.stop_voice()
+        except Exception:
+            pass
         stars_calculated = 3
         weak_list = []
         if score_tracker:
@@ -133,6 +148,11 @@ class ABCSafariApp(ctk.CTk):
             self.after(500, lambda: threading.Thread(target=lambda: voice.robo_say("game_end", name=self.player_name), daemon=True).start())
 
     def _restart_session_trigger(self):
+        try:
+            import voice
+            voice.stop_voice()
+        except Exception:
+            pass
         # Shuffle the questions so that the new session is also randomized!
         shuffle_questions()
         if ai_engine: ai_engine.start_session()
