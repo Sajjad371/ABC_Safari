@@ -316,20 +316,32 @@ PHONETIC_LETTERS = {
     "zed": "Z", "zee": "Z", "z": "Z"
 }
 
-def listen_for_letter(timeout=3):
+def listen_for_letter(timeout=5):
     if not SR_AVAILABLE: 
         raise ImportError("speech_recognition library not available")
     rec = sr.Recognizer()
     rec.energy_threshold = 300
+    rec.dynamic_energy_threshold = True
     rec.pause_threshold = 0.8
     
     try:
         with sr.Microphone() as source:
-            # Calibrate noise faster (0.2s instead of 0.5s)
-            rec.adjust_for_ambient_noise(source, duration=0.2)
+            # Calibrate noise safely
             try:
-                # Snappy timeouts for phrase listening to prevent long waits
-                audio = rec.listen(source, timeout=timeout, phrase_time_limit=2)
+                rec.adjust_for_ambient_noise(source, duration=0.3)
+            except Exception:
+                pass
+            
+            # Capping the energy threshold to prevent the microphone from going "deaf"
+            # on static pops or local noise during initialization
+            if rec.energy_threshold > 800:
+                rec.energy_threshold = 800
+            elif rec.energy_threshold < 100:
+                rec.energy_threshold = 100
+                
+            try:
+                # Give the user more time to speak: 5 seconds timeout, 4 seconds phrase limit
+                audio = rec.listen(source, timeout=timeout, phrase_time_limit=4)
             except sr.WaitTimeoutError:
                 raise ValueError("No sound detected! Speak closer/louder")
         
@@ -339,11 +351,11 @@ def listen_for_letter(timeout=3):
             try:
                 from data.questions import QUESTIONS
                 for q in QUESTIONS:
-                    if spoken_str == q["animal"].lower():
+                    if spoken_str == q["animal"].strip().lower():
                         return q["letter"]
                 for w in spoken_str.split():
                     for q in QUESTIONS:
-                        if w == q["animal"].lower():
+                        if w == q["animal"].strip().lower():
                             return q["letter"]
             except Exception as ex:
                 print(f"Error checking animal name matching: {ex}")
